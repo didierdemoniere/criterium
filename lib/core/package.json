@@ -1,6 +1,6 @@
 {
   "name": "@criterium/core",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "create criterium converters",
   "main": "build/main/index.js",
   "types": "build/main/index.d.ts",

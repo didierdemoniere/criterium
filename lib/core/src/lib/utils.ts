@@ -1,12 +1,5 @@
 import { operators } from './validation';
 
-export type Reducer<T, R> = (
-  children: Array<R>,
-  value: T,
-  path: Array<string | number>,
-  parent?: T,
-) => R | undefined;
-
 const toString = Object.prototype.toString;
 
 /**
@@ -38,27 +31,6 @@ export const isPlainObject = typeIs('Object') as (
  * @returns true if the value is a RegExp
  */
 export const isRegExp = typeIs('RegExp');
-
-/**
- * checks if the value is a value has the given prototype name
- * @param prototypeName
- * @param value
- * @returns true if the value has the given prototype
- */
-
-export function hasPrototype(prototypeName: string, value: any) {
-  let proto = Object.getPrototypeOf(value);
-  while (proto) {
-    if (!proto || !proto.constructor) {
-      return false;
-    }
-    if (proto.constructor.name === prototypeName) {
-      return true;
-    }
-    proto = Object.getPrototypeOf(proto);
-  }
-  return false;
-}
 
 const logicalArrayOperators = ['$and', '$or', '$nor'];
 
