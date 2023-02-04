@@ -1,10 +1,11 @@
 {
   "name": "@criterium/core",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "create criterium converters",
   "main": "build/main/index.js",
   "types": "build/main/index.d.ts",
   "module": "build/module/index.js",
+  "repository": "https://github.com/didierdemoniere/criterium",
   "scripts": {
     "build": "rimraf ./build && run-p build:*",
     "build:main": "tsc -p tsconfig.json",
