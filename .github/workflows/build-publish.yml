@@ -39,7 +39,10 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - name: Publish
-        run: pnpm -r publish --filter "@criterium/*"
+      - name: Set publishing config
+        run: pnpm config set '//registry.npmjs.org/:_authToken' "${NODE_AUTH_TOKEN}"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish
+        run: pnpm -r publish --filter "@criterium/*" --access=public
