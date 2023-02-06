@@ -53,6 +53,17 @@ describe('redissearch', () => {
   });
 
   describe('operators', () => {
+    describe('empty query', () => {
+      test('should return all documents', async () => {
+        const result = await redisClient.ft.search(
+          'idx:users',
+          ...toRedisSearch({}),
+        );
+        expect(result.total).toEqual(1);
+        expect(result.documents[0].value).toEqual(data);
+      });
+    });
+
     describe('$eq', () => {
       test('should support all supported types', async () => {
         const testName = await redisClient.ft.search(

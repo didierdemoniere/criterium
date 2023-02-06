@@ -151,11 +151,19 @@ export default converter({
     };
   },
   resolve: (result: string, ctx) => {
-    return [result, ctx.redisearch] as [
+    // PARAMS can't be empty
+    const options =
+      Object.keys(ctx.redisearch.PARAMS).length > 0
+        ? ctx.redisearch
+        : {
+            DIALECT: ctx.redisearch.DIALECT,
+          };
+
+    return [result || '*', options] as [
       string,
       {
         DIALECT: number;
-        PARAMS: Record<string, any>;
+        PARAMS?: Record<string, any>;
       },
     ];
   },
