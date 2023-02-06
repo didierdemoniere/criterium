@@ -8,6 +8,12 @@ const data = {
 };
 
 describe('operators', () => {
+  describe('empty query', () => {
+    test('should match everything', async () => {
+      const test = toPredicate({});
+      expect(test(data)).toEqual(true);
+    });
+  });
   describe('$eq', () => {
     test('should support all supported types', async () => {
       const testName = toPredicate({ name: 'John' });
