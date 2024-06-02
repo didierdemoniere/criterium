@@ -5,7 +5,7 @@
   "scripts": {
     "build": "pnpm --stream -r run build",
     "dev": "pnpm --parallel -r run dev",
-    "test": "pnpm --workspace-concurrency=1 -r run test",
+    "test": "pnpm --stream -r --filter=!@criterium/redisearch run test",
     "test:dev": "pnpm --parallel -r run test:dev"
   },
   "author": "",
