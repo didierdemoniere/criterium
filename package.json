@@ -5,7 +5,7 @@
   "scripts": {
     "build": "pnpm --stream -r run build",
     "dev": "pnpm --parallel -r run dev",
-    "test": "pnpm --stream -r run test",
+    "test": "pnpm --workspace-concurrency=1 -r run test",
     "test:dev": "pnpm --parallel -r run test:dev"
   },
   "author": "",
