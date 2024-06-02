@@ -1,15 +1,24 @@
 # @criterium/kysely
 
-To install dependencies:
+@criterium/kysely allow to use mongo-like filters with kysely
 
-```bash
-bun install
+## install
+
+```sh
+npm i @criterium/kysely
 ```
 
-To run:
+## usage
 
-```bash
-bun run src/index.ts
+```ts
+import filter from '@criterium/kysely';
+import { db } from '/db';
+
+const results = await db.selectFrom('person')
+  .selectAll()
+  .where(filter({
+    name: { 
+      $in: ['John'] 
+    }
+  })).execute();
 ```
-
-This project was created using `bun init` in bun v1.1.10. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.

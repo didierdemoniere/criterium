@@ -1,6 +1,6 @@
 {
   "name": "@criterium/kysely",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "convert criterium queries into kysely expressions",
   "main": "build/main/index.js",
   "types": "build/main/index.d.ts",
