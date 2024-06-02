@@ -1,0 +1,35 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/docker-in-docker
+{
+	"name": "Docker in Docker",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"build": {
+        // Path is relataive to the devcontainer.json file.
+        "dockerfile": "Dockerfile",
+		"context": "."
+    },
+	"features": {
+		// "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+	},
+	"mounts": [
+		// "source=/etc/hosts,target=${containerWorkspaceFolder}/.hosts,type=bind,consistency=cached",
+		// "source=${localWorkspaceFolder}/.ssh,target=/root/.ssh,type=bind,consistency=cached",
+		// "source=${localWorkspaceFolder}/.kube,target=/root/.kube,type=bind,consistency=cached"
+	],
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	"forwardPorts": []
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "docker --version",
+
+	// Configure tool-specific properties.
+	// "customizations": {},
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+
+	// "postCreateCommand": "bash .devcontainer/init.sh",
+	// "postStartCommand": "bash .devcontainer/start.sh"
+}

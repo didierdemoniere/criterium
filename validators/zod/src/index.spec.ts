@@ -1,3 +1,6 @@
+import { describe, test } from 'node:test'
+import { expect } from 'expect';
+
 import { z } from 'zod';
 import { queryOf } from './index';
 

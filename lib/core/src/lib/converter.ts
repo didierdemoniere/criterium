@@ -1,5 +1,4 @@
-import { fold } from 'langkit';
-import { isPlainObject, isProperty } from './utils';
+import { fold, isPlainObject, isProperty } from './utils';
 import {
   UnexpectedValueError,
   OperatorNotSupportedError,

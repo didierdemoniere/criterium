@@ -1,9 +1,8 @@
+import { after, before, describe, test } from 'node:test'
 import { SchemaFieldTypes } from 'redis';
 import { connectingClient } from './redis';
 import toRedisSearch from './';
-type Awaited<T> = T extends Promise<infer U> ? U : T;
-
-jest.setTimeout(30000);
+import { expect } from 'expect';
 
 const data = {
   name: 'John',
@@ -15,7 +14,7 @@ const data = {
 describe('redissearch', () => {
   let redisClient: Awaited<typeof connectingClient>;
 
-  beforeAll(async () => {
+  before(async () => {
     redisClient = await connectingClient;
     await redisClient.json.set('users:1', '$', data);
 
@@ -48,7 +47,7 @@ describe('redissearch', () => {
     );
   });
 
-  afterAll(async () => {
+  after(async () => {
     await redisClient.disconnect();
   });
 

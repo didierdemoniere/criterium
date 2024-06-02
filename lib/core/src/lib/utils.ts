@@ -60,3 +60,39 @@ export function escape(charset: RegExp) {
   return (str: string) =>
     str.replace(new RegExp(`(?:\\\\{1})*(${charset.source})`, 'g'), `\\$1`);
 }
+
+export type Reducer<T, R> = (
+  children: Array<R>,
+  value: T,
+  path: Array<string | number>,
+  parent?: T,
+) => R | undefined;
+
+/**
+ * recursively folds over an ast
+ * @param reducer
+ * @param ast
+ * @param path
+ * @param parent
+ * @returns
+ */
+export function fold<T, R>(
+  reducer: Reducer<T, R>,
+  ast: T,
+  path: Array<string | number> = [],
+  parent?: T,
+): R {
+  return reducer(
+    (Array.isArray(ast)
+      ? ast.map((child, i) => fold(reducer, child, path.concat([i]), ast))
+      : isPlainObject(ast)
+      ? Object.keys(ast).map((key) =>
+          fold(reducer, (ast as any)[key], path.concat([key]), ast),
+        )
+      : []
+    ).filter((child) => child !== undefined),
+    ast,
+    path,
+    parent,
+  ) as R;
+}

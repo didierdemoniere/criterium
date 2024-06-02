@@ -1,3 +1,5 @@
+import { describe, test } from 'node:test'
+import { expect } from 'expect';
 import toPredicate from './index';
 
 const data = {

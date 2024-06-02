@@ -1,25 +1,13 @@
 {
   "name": "criterium",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "filtering query components for APIs, databases and search engines",
   "scripts": {
     "build": "pnpm --stream -r run build",
     "dev": "pnpm --parallel -r run dev",
     "test": "pnpm --stream -r run test",
-    "test:dev": "pnpm --parallel -r run test:dev",
-    "prepare": "husky install"
+    "test:dev": "pnpm --parallel -r run test:dev"
   },
   "author": "",
-  "license": "ISC",
-  "config": {
-    "commitizen": {
-      "path": "cz-conventional-changelog"
-    }
-  },
-  "devDependencies": {
-    "@commitlint/cli": "^17.4.2",
-    "@commitlint/config-conventional": "^17.4.2",
-    "cz-conventional-changelog": "^3.3.0",
-    "husky": "^8.0.1"
-  }
+  "license": "ISC"
 }

@@ -6,7 +6,7 @@ type ConnectingClient = Promise<ReturnType<typeof createClient>>;
 export { ConnectingClient };
 
 export const connectingClient: ConnectingClient = new GenericContainer(
-  'redis/redis-stack-server:latest',
+  'redis/redis-stack-server:7.2.0-RC1-arm64'
 )
   .withExposedPorts(6379)
   .start()
