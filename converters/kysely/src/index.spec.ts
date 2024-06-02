@@ -1,5 +1,4 @@
 import { after, before, describe, test } from 'node:test'
-// import { db } from './db'
 import toKysely from './index';
 import { expect } from 'expect';
 import { connectingClient } from './postgres';
