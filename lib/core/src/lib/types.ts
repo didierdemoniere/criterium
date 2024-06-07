@@ -3,80 +3,70 @@ import { operators } from './validation';
 /**
  *
  */
-export type CriteriumOperator<
-  T,
-  XCTX extends { schema?: any } = { schema?: any },
-> = (
+export type CriteriumOperator<T> = (
   path: Array<string | number>,
   value: any,
   children: Array<T>,
-  options: { ctx: CriteriumContext<XCTX>; path: Array<string | number> },
+  options: { path: Array<string | number> },
 ) => T;
 
 /**
  *
  */
-export interface CriteriumDialect<
-  T,
-  R = T,
-  XCTX extends { schema?: any } = { schema?: any },
-> {
-  operators: Record<'$eq' | '$and', CriteriumOperator<T, XCTX>> &
-    Partial<Record<keyof typeof operators, CriteriumOperator<T, XCTX>>>;
-
-  extendCtx?: () => XCTX;
-
+export interface CriteriumDialect<T> {
   dataDepth?: number;
-
-  resolve?: (result: T, ctx: CriteriumContext<XCTX>) => R;
-  reject?: (errors: Array<Error>, ctx: CriteriumContext<XCTX>) => Error;
+  operators: Record<'$eq' | '$and', CriteriumOperator<T>> &
+    Partial<Record<keyof typeof operators, CriteriumOperator<T>>>;
 }
 
 /**
  *
  */
-export type CriteriumContext<T extends { schema?: any } = { schema?: any }> = {
-  errors: Array<Error>;
-} & T;
-
-/**
- *
- */
-export type CriteruimExpression<T> = {
-  $not?: CriteruimExpression<T>;
-  $exists?: boolean;
-} & (T extends object
-  ? {
-      [K in keyof T]?: CriteruimExpression<T[K]>;
-    }
+export type CriteruimExpression<T> = (
+  T extends number | Date
+  ?  T | {
+    $not?: CriteruimExpression<T>;
+    $exists?: boolean;
+    $gt?: T;
+    $gte?: T;
+    $lt?: T;
+    $lte?: T;
+    $in?: T[];
+    $nin?: T[];
+    $eq?: T;
+    $ne?: T;
+  }
   : T extends Array<any>
   ? {
+      $not?: CriteruimExpression<T>;
+      $exists?: boolean;
       $all?: T;
     }
-  : T extends number
-  ?
-      | T
-      | {
-          $gt?: T;
-          $gte?: T;
-          $lt?: T;
-          $lte?: T;
-          $in?: T[];
-          $nin?: T[];
-          $eq?: T;
-          $ne?: T;
-        }
   : T extends string
-  ?
-      | T
-      | {
-          $in?: T[];
-          $nin?: T[];
-          $eq?: T;
-          $ne?: T;
-          $like?: T;
-        }
-  : never);
+  ? T | {
+      $not?: CriteruimExpression<T>;
+      $exists?: boolean;
+      $in?: T[];
+      $nin?: T[];
+      $eq?: T;
+      $ne?: T;
+      $like?: T;
+    }
+  : T extends object
+  ? ({
+      $not?: CriteruimExpression<T>;
+      $exists?: boolean;
+    } & {
+      [K in keyof T]?: CriteruimExpression<T[K]>;
+    })
+  : T | {
+    $not?: CriteruimExpression<T>;
+    $exists?: boolean;
+    $in?: T[];
+    $nin?: T[];
+    $eq?: T;
+    $ne?: T;
+  });
 
 /**
  *

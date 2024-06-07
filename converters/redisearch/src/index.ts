@@ -1,9 +1,14 @@
-import { converter, utils } from '@criterium/core';
+import { converter, utils, type CriteruimQuery } from '@criterium/core';
 
 const Datatypes = {
   TEXT: 'TEXT',
   NUMERIC: 'NUMERIC',
   TAG: 'TAG',
+};
+
+type Ctx = {
+  DIALECT: number;
+  PARAMS: Record<string, any>;
 };
 
 /**
@@ -12,8 +17,8 @@ const Datatypes = {
  */
 const escape = utils.escape(/[^\w\d_]/);
 
-const placeholder = (ctx, prop, val) => {
-  ctx.redisearch.PARAMS[prop] = val;
+const placeholder = (ctx: Ctx, prop: string, val) => {
+  ctx.PARAMS[prop] = val;
   return `$${prop}`;
 };
 
@@ -44,36 +49,30 @@ const coerce = (val: any) => {
   return typeof val !== 'boolean' && !isNaN(val) ? Number(val) : `${val}`;
 };
 
-export const converterOptions = {
-  redisearch: {
-    DIALECT: 2,
-  },
-};
 
-export default converter({
+export const compile = converter<(ctx: Ctx) => string>({
   dataDepth: 1,
   operators: {
-    $and: (_, __, children: string[]) => children.filter(Boolean).join(' '),
-    $or: (_, __, children: string[]) =>
-      `(${children.filter(Boolean).join('|')})`,
-    $nor: (_, __, children: string[]) =>
-      `-(${children.filter(Boolean).join('|')})`,
-    $not: (_, __, children: string[]) =>
-      `-(${children.filter(Boolean).join(' ')})`,
-    $in: ([prop], __, children: any[], { ctx }) => {
-      const escapedProp = escape(prop.toString());
-      const variables = children.map((value, id) =>
-        placeholder(ctx, escapedProp + id, coerce(value)),
-      );
+    $and: (_, __, children) => (ctx) => children.map(child => child(ctx)).filter(Boolean).join(' '),
+    $or: (_, __, children) => (ctx) =>`(${children.map(child => child(ctx)).filter(Boolean).join('|')})`,
+    $nor: (_, __, children) => (ctx) =>`-(${children.map(child => child(ctx)).filter(Boolean).join('|')})`,
+    $not: (_, __, children) => (ctx) =>`-(${children.map(child => child(ctx)).filter(Boolean).join(' ')})`,
+    $in: ([prop], __, children: Array<any>) => {
+      return (ctx) => {
+        const escapedProp = escape(prop.toString());
+        const variables = children.map((value, id) =>
+          placeholder(ctx, escapedProp + id, coerce(value)),
+        );
 
-      return `(${variables
-        .map((variable, i) => {
-          const type = getType(children[i]);
-          return `@${escapedProp}:${formatVariable(variable, type)}`;
-        })
-        .join('|')})`;
+        return `(${variables
+          .map((variable, i) => {
+            const type = getType(children[i]);
+            return `@${escapedProp}:${formatVariable(variable, type)}`;
+          })
+          .join('|')})`;
+      }
     },
-    // $all: ([prop], __, children: any[], { ctx }) => {
+    // $all: ([prop], __, children: any[]) => {
     //   const escapedProp = escape(prop.toString());
     //   const variables = children.map((value, id) =>
     //     placeholder(ctx, escapedProp + id, coerce(value)),
@@ -88,83 +87,85 @@ export default converter({
     //     })
     //     .join(' ');
     // },
-    $nin: ([prop], __, children: any[], { ctx }) => {
-      const escapedProp = escape(prop.toString());
-      const variables = children.map((value, i) =>
-        placeholder(ctx, escapedProp + i, coerce(value)),
-      );
+    $nin: ([prop], __, children: Array<any>) => {
+      return (ctx) => {
+        const escapedProp = escape(prop.toString());
+        const variables = children.map((value, i) =>
+          placeholder(ctx, escapedProp + i, coerce(value))
+        );
 
-      return `-(${variables
-        .map((variable, i) => {
-          const type = getType(children[i]);
-          return `@${escapedProp}:${formatVariable(variable, type)}`;
-        })
-        .join('|')})`;
+        return `-(${variables
+          .map((variable, i) => {
+            const type = getType(children[i]);
+            return `@${escapedProp}:${formatVariable(variable, type)}`;
+          })
+          .join('|')})`;
+      }
     },
-    $gt: ([prop], value, _, { ctx }) => {
-      const escapedProp = escape(prop.toString());
-      const variable = placeholder(ctx, escapedProp, Number(value));
-      return `@${escapedProp}:[(${variable} +inf]`;
+    $gt: ([prop], value) => {
+      return (ctx) => {
+        const escapedProp = escape(prop.toString());
+        const variable = placeholder(ctx, escapedProp, Number(value));
+        return `@${escapedProp}:[(${variable} +inf]`;
+      }
     },
-    $gte: ([prop], value, _, { ctx }) => {
-      const escapedProp = escape(prop.toString());
-      const variable = placeholder(ctx, escapedProp, Number(value));
-      return `@${escapedProp}:[${variable} +inf]`;
+    $gte: ([prop], value) => {
+      return (ctx) => {
+        const escapedProp = escape(prop.toString());
+        const variable = placeholder(ctx, escapedProp, Number(value));
+        return `@${escapedProp}:[${variable} +inf]`;
+      }
     },
-    $lt: ([prop], value, _, { ctx }) => {
-      const escapedProp = escape(prop.toString());
-      const variable = placeholder(ctx, escapedProp, Number(value));
-      return `@${escapedProp}:[-inf (${variable}]`;
+    $lt: ([prop], value) => {
+      return (ctx) => {
+        const escapedProp = escape(prop.toString());
+        const variable = placeholder(ctx, escapedProp, Number(value));
+        return `@${escapedProp}:[-inf (${variable}]`;
+      }
     },
-    $lte: ([prop], value, _, { ctx }) => {
-      const escapedProp = escape(prop.toString());
-      const variable = placeholder(ctx, escapedProp, Number(value));
-      return `@${escapedProp}:[-inf ${variable}]`;
+    $lte: ([prop], value) => {
+      return (ctx) => {
+        const escapedProp = escape(prop.toString());
+        const variable = placeholder(ctx, escapedProp, Number(value));
+        return `@${escapedProp}:[-inf ${variable}]`;
+      }
     },
-    $ne: ([prop], value, _, { ctx }) => {
-      const escapedProp = escape(prop.toString());
-      const type = getType(value);
-      const variable = placeholder(ctx, escapedProp, coerce(value));
-      return `-@${escapedProp}:${formatVariable(variable, type)}`;
+    $ne: ([prop], value) => {
+      return (ctx) => {
+        const escapedProp = escape(prop.toString());
+        const type = getType(value);
+        const variable = placeholder(ctx, escapedProp, coerce(value));
+        return `-@${escapedProp}:${formatVariable(variable, type)}`;
+      }
     },
-    $eq: ([prop], value, _, { ctx }) => {
-      const escapedProp = escape(prop.toString());
-      const type = getType(value);
-      const variable = placeholder(ctx, escapedProp, coerce(value));
-      return `@${escapedProp}:${formatVariable(variable, type)}`;
+    $eq: ([prop], value) => {
+      return (ctx) => {
+        const escapedProp = escape(prop.toString());
+        const type = getType(value);
+        const variable = placeholder(ctx, escapedProp, coerce(value));
+        return `@${escapedProp}:${formatVariable(variable, type)}`;
+      }
     },
-    $like: ([prop], value, _, { ctx }) => {
-      const escapedProp = escape(prop.toString());
-      const variable = placeholder(ctx, escapedProp, coerce(value));
-      return `@${escapedProp}:*${variable}*`;
+    $like: ([prop], value) => {
+      return (ctx) => {
+        const escapedProp = escape(prop.toString());
+        const variable = placeholder(ctx, escapedProp, coerce(value));
+        return `@${escapedProp}:*${variable}*`;
+      }
     },
-  },
-  extendCtx: () => {
-    return {
-      redisearch: { DIALECT: converterOptions.redisearch.DIALECT, PARAMS: {} },
-    } as {
-      redisearch: {
-        DIALECT: number;
-        PARAMS: Record<string, any>;
-      };
-      schema?: any;
-    };
-  },
-  resolve: (result: string, ctx) => {
-    // PARAMS can't be empty
-    const options =
-      Object.keys(ctx.redisearch.PARAMS).length > 0
-        ? ctx.redisearch
-        : {
-            DIALECT: ctx.redisearch.DIALECT,
-          };
-
-    return [result || '*', options] as [
-      string,
-      {
-        DIALECT: number;
-        PARAMS?: Record<string, any>;
-      },
-    ];
   },
 });
+
+
+export default <T extends Record<string, any>>(query: CriteruimQuery<T>, options?: Partial<Ctx>) => {
+  const ctx = {
+    DIALECT: 2,
+    PARAMS: {},
+    ...(options || {})
+  };
+
+  return [
+    compile(query)(ctx) as string || '*', 
+    Object.keys(ctx.PARAMS).length > 0 ? ctx : { DIALECT: ctx.DIALECT }
+  ] as const;
+}

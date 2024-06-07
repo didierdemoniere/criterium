@@ -249,12 +249,12 @@ describe('operators', () => {
 
   describe('$and', () => {
     test('should support all supported types', async () => {
-      const testNameAndAge = toPredicate({
+      const testNameAndAge = toPredicate<typeof data>({
         $and: [{ name: { $eq: 'John' } }, { age: { $eq: 30 } }],
       });
       expect(testNameAndAge(data)).toEqual(true);
 
-      const testIsActiveAndBirthDate = toPredicate({
+      const testIsActiveAndBirthDate = toPredicate<typeof data>({
         $and: [
           { is_active: { $eq: true } },
           { birth_date: { $eq: new Date('1990-01-01') } },
@@ -266,12 +266,12 @@ describe('operators', () => {
 
   describe('$or', () => {
     test('should support all supported types', async () => {
-      const testNameOrAge = toPredicate({
+      const testNameOrAge = toPredicate<typeof data>({
         $or: [{ name: { $eq: 'John' } }, { age: { $eq: 30 } }],
       });
       expect(testNameOrAge(data)).toEqual(true);
 
-      const testIsActiveOrBirthDate = toPredicate({
+      const testIsActiveOrBirthDate = toPredicate<typeof data>({
         $or: [
           { is_active: { $eq: true } },
           { birth_date: { $eq: new Date('1990-01-01') } },
@@ -283,12 +283,12 @@ describe('operators', () => {
 
   describe('$nor', () => {
     test('should support all supported types', async () => {
-      const testNameNorAge = toPredicate({
+      const testNameNorAge = toPredicate<typeof data>({
         $nor: [{ name: { $eq: 'John' } }, { age: { $eq: 30 } }],
       });
       expect(testNameNorAge(data)).toEqual(false);
 
-      const testIsActiveNorBirthDate = toPredicate({
+      const testIsActiveNorBirthDate = toPredicate<typeof data>({
         $nor: [
           { is_active: { $eq: true } },
           { birth_date: { $eq: new Date('1990-01-01') } },

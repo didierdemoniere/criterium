@@ -1,6 +1,6 @@
 {
   "name": "@criterium/redisearch",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "description": "convert criterium queries into redisearch-compatible queries",
   "main": "build/main/index.js",
   "types": "build/main/index.d.ts",

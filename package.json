@@ -1,6 +1,6 @@
 {
   "name": "criterium",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "filtering query components for APIs, databases and search engines",
   "scripts": {
     "build": "pnpm --stream -r run build",

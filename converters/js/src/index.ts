@@ -14,26 +14,26 @@ const coerce = (val: any) => {
   return typeof val !== 'boolean' && !isNaN(val) ? Number(val) : val;
 };
 
-export default converter({
+export default converter<(item) => boolean>({
   operators: {
-    $and: (_, __, children: Array<(item: any) => boolean>) => {
-      return (item: any) =>
+    $and: (_, __, children) => {
+      return (item) =>
         children.filter(Boolean).every((child) => child(item));
     },
-    $or: (_, __, children: Array<(item: any) => boolean>) => {
-      return (item: any) =>
+    $or: (_, __, children) => {
+      return (item) =>
         children.filter(Boolean).some((child) => child(item));
     },
-    $nor: (_, __, children: Array<(item: any) => boolean>) => {
-      return (item: any) =>
+    $nor: (_, __, children) => {
+      return (item) =>
         !children.filter(Boolean).every((child) => child(item));
     },
-    $not: (_, __, children: Array<(item: any) => boolean>) => {
-      return (item: any) =>
+    $not: (_, __, children) => {
+      return (item) =>
         !children.filter(Boolean).every((child) => child(item));
     },
     $all: (dataPath, values: any[]) => {
-      return (item: any) => {
+      return (item) => {
         const nestedValues: any[] = Array.from(
           options.get(item, dataPath),
           coerce,
@@ -42,47 +42,47 @@ export default converter({
       };
     },
     $in: (dataPath, values: any[]) => {
-      return (item: any) => {
+      return (item) => {
         const nestedValue = coerce(options.get(item, dataPath));
         return values.some((value) => coerce(value) === nestedValue);
       };
     },
     $nin: (dataPath, values: any[]) => {
-      return (item: any) => {
+      return (item) => {
         const nestedValue = coerce(options.get(item, dataPath));
         return !values.some((value) => coerce(value) === nestedValue);
       };
     },
     $gt: (dataPath, value) => {
-      return (item: any) => Number(options.get(item, dataPath)) > Number(value);
+      return (item) => Number(options.get(item, dataPath)) > Number(value);
     },
     $gte: (dataPath, value) => {
-      return (item: any) =>
+      return (item) =>
         Number(options.get(item, dataPath)) >= Number(value);
     },
     $lt: (dataPath, value) => {
-      return (item: any) => Number(options.get(item, dataPath)) < Number(value);
+      return (item) => Number(options.get(item, dataPath)) < Number(value);
     },
     $lte: (dataPath, value) => {
-      return (item: any) =>
+      return (item) =>
         Number(options.get(item, dataPath)) <= Number(value);
     },
     $ne: (dataPath, value) => {
-      return (item: any) =>
+      return (item) =>
         coerce(options.get(item, dataPath)) !== coerce(value);
     },
     $eq: (dataPath, value) => {
-      return (item: any) =>
+      return (item) =>
         coerce(options.get(item, dataPath)) === coerce(value);
     },
     $like: (dataPath, value) => {
-      return (item: any) =>
+      return (item) =>
         (utils.isRegExp(value) ? value : new RegExp(value)).test(
           options.get(item, dataPath),
         );
     },
     $exists: (dataPath, value) => {
-      return (item: any) => {
+      return (item) => {
         const nestedValue = options.get(item, dataPath);
         return value
           ? nestedValue !== undefined && nestedValue !== null

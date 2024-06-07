@@ -4,7 +4,14 @@ import { connectingClient } from './redis';
 import toRedisSearch from './';
 import { expect } from 'expect';
 
-const data = {
+type Person = {
+  name: string;
+  age: number;
+  is_active: boolean;
+  birth_date: number | Date;
+}
+
+const data: Person = {
   name: 'John',
   age: 30,
   is_active: true,
@@ -56,7 +63,7 @@ describe('redissearch', () => {
       test('should return all documents', async () => {
         const result = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({}),
+          ...toRedisSearch<Person>({}),
         );
         expect(result.total).toEqual(1);
         expect(result.documents[0].value).toEqual(data);
@@ -67,28 +74,28 @@ describe('redissearch', () => {
       test('should support all supported types', async () => {
         const testName = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ name: 'John' }),
+          ...toRedisSearch<Person>({ name: 'John' }),
         );
         expect(testName.total).toEqual(1);
         expect(testName.documents[0].value).toEqual(data);
 
         const testAge = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ age: 30 }),
+          ...toRedisSearch<Person>({ age: 30 }),
         );
         expect(testAge.total).toEqual(1);
         expect(testAge.documents[0].value).toEqual(data);
 
         const testIsActive = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ is_active: true }),
+          ...toRedisSearch<Person>({ is_active: true }),
         );
         expect(testIsActive.total).toEqual(1);
         expect(testIsActive.documents[0].value).toEqual(data);
 
         const testBirthDate = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ birth_date: new Date('1990-01-01') }),
+          ...toRedisSearch<Person>({ birth_date: new Date('1990-01-01') }),
         );
         expect(testBirthDate.total).toEqual(1);
         expect(testBirthDate.documents[0].value).toEqual(data);
@@ -99,25 +106,25 @@ describe('redissearch', () => {
       test('should support all supported types', async () => {
         const testName = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ name: { $ne: 'John' } }),
+          ...toRedisSearch<Person>({ name: { $ne: 'John' } }),
         );
         expect(testName.total).toEqual(0);
 
         const testAge = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ age: { $ne: 30 } }),
+          ...toRedisSearch<Person>({ age: { $ne: 30 } }),
         );
         expect(testAge.total).toEqual(0);
 
         const testIsActive = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ is_active: { $ne: true } }),
+          ...toRedisSearch<Person>({ is_active: { $ne: true } }),
         );
         expect(testIsActive.total).toEqual(0);
 
         const testBirthDate = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ birth_date: { $ne: new Date('1990-01-01') } }),
+          ...toRedisSearch<Person>({ birth_date: { $ne: new Date('1990-01-01') } }),
         );
         expect(testBirthDate.total).toEqual(0);
       });
@@ -126,22 +133,24 @@ describe('redissearch', () => {
     describe('$gt', () => {
       test('should support all supported types', async () => {
         expect(() => {
-          toRedisSearch({ name: { $gt: 'John' } });
+          //@ts-ignore
+          toRedisSearch<Person>({ name: { $gt: 'John' } });
         }).toThrow("unexpected value for operator $gt at '$.name.$gt'");
 
         const testAge = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ age: { $gt: 30 } }),
+          ...toRedisSearch<Person>({ age: { $gt: 30 } }),
         );
         expect(testAge.total).toEqual(0);
 
         expect(() => {
-          toRedisSearch({ is_active: { $gt: true } });
+          //@ts-ignore
+          toRedisSearch<Person>({ is_active: { $gt: true } });
         }).toThrow("unexpected value for operator $gt at '$.is_active.$gt'");
 
         const testBirthDate = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ birth_date: { $gt: new Date('1990-01-01') } }),
+          ...toRedisSearch<Person>({ birth_date: { $gt: new Date('1990-01-01') } }),
         );
         expect(testBirthDate.total).toEqual(0);
       });
@@ -150,23 +159,25 @@ describe('redissearch', () => {
     describe('$gte', () => {
       test('should support all supported types', async () => {
         expect(() => {
-          toRedisSearch({ name: { $gte: 'John' } });
+          //@ts-ignore
+          toRedisSearch<Person>({ name: { $gte: 'John' } });
         }).toThrow("unexpected value for operator $gte at '$.name.$gte'");
 
         const testAge = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ age: { $gte: 30 } }),
+          ...toRedisSearch<Person>({ age: { $gte: 30 } }),
         );
         expect(testAge.total).toEqual(1);
         expect(testAge.documents[0].value).toEqual(data);
 
         expect(() => {
-          toRedisSearch({ is_active: { $gte: true } });
+          //@ts-ignore
+          toRedisSearch<Person>({ is_active: { $gte: true } });
         }).toThrow("unexpected value for operator $gte at '$.is_active.$gte'");
 
         const testBirthDate = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ birth_date: { $gte: new Date('1990-01-01') } }),
+          ...toRedisSearch<Person>({ birth_date: { $gte: new Date('1990-01-01') } }),
         );
         expect(testBirthDate.total).toEqual(1);
         expect(testBirthDate.documents[0].value).toEqual(data);
@@ -176,22 +187,24 @@ describe('redissearch', () => {
     describe('$lt', () => {
       test('should support all supported types', async () => {
         expect(() => {
-          toRedisSearch({ name: { $lt: 'John' } });
+          //@ts-ignore
+          toRedisSearch<Person>({ name: { $lt: 'John' } });
         }).toThrow("unexpected value for operator $lt at '$.name.$lt'");
 
         const testAge = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ age: { $lt: 30 } }),
+          ...toRedisSearch<Person>({ age: { $lt: 30 } }),
         );
         expect(testAge.total).toEqual(0);
 
         expect(() => {
-          toRedisSearch({ is_active: { $lt: true } });
+          //@ts-ignore
+          toRedisSearch<Person>({ is_active: { $lt: true } });
         }).toThrow("unexpected value for operator $lt at '$.is_active.$lt'");
 
         const testBirthDate = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ birth_date: { $lt: new Date('1990-01-01') } }),
+          ...toRedisSearch<Person>({ birth_date: { $lt: new Date('1990-01-01') } }),
         );
         expect(testBirthDate.total).toEqual(0);
       });
@@ -200,23 +213,25 @@ describe('redissearch', () => {
     describe('$lte', () => {
       test('should support all supported types', async () => {
         expect(() => {
-          toRedisSearch({ name: { $lte: 'John' } });
+          //@ts-ignore
+          toRedisSearch<Person>({ name: { $lte: 'John' } });
         }).toThrow("unexpected value for operator $lte at '$.name.$lte'");
 
         const testAge = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ age: { $lte: 30 } }),
+          ...toRedisSearch<Person>({ age: { $lte: 30 } }),
         );
         expect(testAge.total).toEqual(1);
         expect(testAge.documents[0].value).toEqual(data);
 
         expect(() => {
-          toRedisSearch({ is_active: { $lte: true } });
+          //@ts-ignore
+          toRedisSearch<Person>({ is_active: { $lte: true } });
         }).toThrow("unexpected value for operator $lte at '$.is_active.$lte'");
 
         const testBirthDate = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ birth_date: { $lte: new Date('1990-01-01') } }),
+          ...toRedisSearch<Person>({ birth_date: { $lte: new Date('1990-01-01') } }),
         );
         expect(testBirthDate.total).toEqual(1);
         expect(testBirthDate.documents[0].value).toEqual(data);
@@ -227,28 +242,28 @@ describe('redissearch', () => {
       test('should support all supported types', async () => {
         const testName = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ name: { $in: ['John'] } }),
+          ...toRedisSearch<Person>({ name: { $in: ['John'] } }),
         );
         expect(testName.total).toEqual(1);
         expect(testName.documents[0].value).toEqual(data);
 
         const testAge = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ age: { $in: [30] } }),
+          ...toRedisSearch<Person>({ age: { $in: [30] } }),
         );
         expect(testAge.total).toEqual(1);
         expect(testAge.documents[0].value).toEqual(data);
 
         const testIsActive = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ is_active: { $in: [true] } }),
+          ...toRedisSearch<Person>({ is_active: { $in: [true] } }),
         );
         expect(testIsActive.total).toEqual(1);
         expect(testIsActive.documents[0].value).toEqual(data);
 
         const testBirthDate = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ birth_date: { $in: [new Date('1990-01-01')] } }),
+          ...toRedisSearch<Person>({ birth_date: { $in: [new Date('1990-01-01')] } }),
         );
         expect(testBirthDate.total).toEqual(1);
         expect(testBirthDate.documents[0].value).toEqual(data);
@@ -259,25 +274,25 @@ describe('redissearch', () => {
       test('should support all supported types', async () => {
         const testName = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ name: { $nin: ['John'] } }),
+          ...toRedisSearch<Person>({ name: { $nin: ['John'] } }),
         );
         expect(testName.total).toEqual(0);
 
         const testAge = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ age: { $nin: [30] } }),
+          ...toRedisSearch<Person>({ age: { $nin: [30] } }),
         );
         expect(testAge.total).toEqual(0);
 
         const testIsActive = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ is_active: { $nin: [true] } }),
+          ...toRedisSearch<Person>({ is_active: { $nin: [true] } }),
         );
         expect(testIsActive.total).toEqual(0);
 
         const testBirthDate = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ birth_date: { $nin: [new Date('1990-01-01')] } }),
+          ...toRedisSearch<Person>({ birth_date: { $nin: [new Date('1990-01-01')] } }),
         );
         expect(testBirthDate.total).toEqual(0);
       });
@@ -286,19 +301,19 @@ describe('redissearch', () => {
     describe('$exists', () => {
       test('should not be supported', async () => {
         expect(() => {
-          toRedisSearch({ name: { $exists: true } });
+          toRedisSearch<Person>({ name: { $exists: true } });
         }).toThrow("'$exists' operator not supported at '$.name.$exists'");
 
         expect(() => {
-          toRedisSearch({ age: { $exists: true } });
+          toRedisSearch<Person>({ age: { $exists: true } });
         }).toThrow("'$exists' operator not supported at '$.age.$exists'");
 
         expect(() => {
-          toRedisSearch({ is_active: { $exists: true } });
+          toRedisSearch<Person>({ is_active: { $exists: true } });
         }).toThrow("'$exists' operator not supported at '$.is_active.$exists'");
 
         expect(() => {
-          toRedisSearch({ birth_date: { $exists: true } });
+          toRedisSearch<Person>({ birth_date: { $exists: true } });
         }).toThrow(
           "'$exists' operator not supported at '$.birth_date.$exists'",
         );
@@ -349,31 +364,31 @@ describe('redissearch', () => {
       });
 
       test('should support all supported types', async () => {
-        console.log(toRedisSearch({ name: { $all: ['John', 'Jane'] } }));
+        console.log(toRedisSearch<Person>({ name: { $all: ['John', 'Jane'] } }));
         const testName = await redisClient.ft.search(
           'idx:couples',
-          ...toRedisSearch({ name: { $all: ['John', 'Jane'] } }),
+          ...toRedisSearch<Person>({ name: { $all: ['John', 'Jane'] } }),
         );
         expect(testName.total).toEqual(1);
         expect(testName.documents[0].value).toEqual(couple);
 
         const testAge = await redisClient.ft.search(
           'idx:couples',
-          ...toRedisSearch({ age: { $all: [30, 25] } }),
+          ...toRedisSearch<Person>({ age: { $all: [30, 25] } }),
         );
         expect(testAge.total).toEqual(1);
         expect(testAge.documents[0].value).toEqual(couple);
 
         const testIsActive = await redisClient.ft.search(
           'idx:couples',
-          ...toRedisSearch({ is_active: { $all: [true, false] } }),
+          ...toRedisSearch<Person>({ is_active: { $all: [true, false] } }),
         );
         expect(testIsActive.total).toEqual(1);
         expect(testIsActive.documents[0].value).toEqual(couple);
 
         const testBirthDate = await redisClient.ft.search(
           'idx:couples',
-          ...toRedisSearch({
+          ...toRedisSearch<Person>({
             birth_date: {
               $all: [new Date('1990-01-01'), new Date('1990-01-02')],
             },
@@ -388,23 +403,26 @@ describe('redissearch', () => {
       test('should support all supported types', async () => {
         const testName = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ name: { $like: 'Jo' } }),
+          ...toRedisSearch<Person>({ name: { $like: 'Jo' } }),
         );
         expect(testName.total).toEqual(1);
         expect(testName.documents[0].value).toEqual(data);
 
         expect(() => {
-          toRedisSearch({ age: { $like: 30 } });
+          //@ts-ignore
+          toRedisSearch<Person>({ age: { $like: 30 } });
         }).toThrow("unexpected value for operator $like at '$.age.$like'");
 
         expect(() => {
-          toRedisSearch({ is_active: { $like: true } });
+          //@ts-ignore
+          toRedisSearch<Person>({ is_active: { $like: true } });
         }).toThrow(
           "unexpected value for operator $like at '$.is_active.$like'",
         );
 
         expect(() => {
-          toRedisSearch({ birth_date: { $like: new Date('1990-01-01') } });
+          //@ts-ignore
+          toRedisSearch<Person>({ birth_date: { $like: new Date('1990-01-01') } });
         }).toThrow(
           "unexpected value for operator $like at '$.birth_date.$like'",
         );
@@ -415,25 +433,25 @@ describe('redissearch', () => {
       test('should support all supported types', async () => {
         const testName = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ name: { $not: { $eq: 'John' } } }),
+          ...toRedisSearch<Person>({ name: { $not: { $eq: 'John' } } }),
         );
         expect(testName.total).toEqual(0);
 
         const testAge = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ age: { $not: { $eq: 30 } } }),
+          ...toRedisSearch<Person>({ age: { $not: { $eq: 30 } } }),
         );
         expect(testAge.total).toEqual(0);
 
         const testIsActive = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({ is_active: { $not: { $eq: true } } }),
+          ...toRedisSearch<Person>({ is_active: { $not: { $eq: true } } }),
         );
         expect(testIsActive.total).toEqual(0);
 
         const testBirthDate = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({
+          ...toRedisSearch<Person>({
             birth_date: { $not: { $eq: new Date('1990-01-01') } },
           }),
         );
@@ -445,7 +463,7 @@ describe('redissearch', () => {
       test('should support all supported types', async () => {
         const testNameAndAge = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({
+          ...toRedisSearch<Person>({
             $and: [{ name: { $eq: 'John' } }, { age: { $eq: 30 } }],
           }),
         );
@@ -454,7 +472,7 @@ describe('redissearch', () => {
 
         const testIsActiveAndBirthDate = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({
+          ...toRedisSearch<Person>({
             $and: [
               { is_active: { $eq: true } },
               { birth_date: { $eq: new Date('1990-01-01') } },
@@ -470,7 +488,7 @@ describe('redissearch', () => {
       test('should support all supported types', async () => {
         const testNameOrAge = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({
+          ...toRedisSearch<Person>({
             $or: [{ name: { $eq: 'John' } }, { age: { $eq: 30 } }],
           }),
         );
@@ -479,7 +497,7 @@ describe('redissearch', () => {
 
         const testIsActiveOrBirthDate = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({
+          ...toRedisSearch<Person>({
             $or: [
               { is_active: { $eq: true } },
               { birth_date: { $eq: new Date('1990-01-01') } },
@@ -495,7 +513,7 @@ describe('redissearch', () => {
       test('should support all supported types', async () => {
         const testNameNorAge = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({
+          ...toRedisSearch<Person>({
             $nor: [{ name: { $eq: 'John' } }, { age: { $eq: 30 } }],
           }),
         );
@@ -503,7 +521,7 @@ describe('redissearch', () => {
 
         const testIsActiveNorBirthDate = await redisClient.ft.search(
           'idx:users',
-          ...toRedisSearch({
+          ...toRedisSearch<Person>({
             $nor: [
               { is_active: { $eq: true } },
               { birth_date: { $eq: new Date('1990-01-01') } },
