@@ -1,4 +1,4 @@
-import { converter, utils, type CriteruimQuery } from '@criterium/core';
+import { ConfigurationError, converter, QueryValidationError, utils, type CriteruimQuery } from '@criterium/core';
 
 const Datatypes = {
   TEXT: 'TEXT',
@@ -157,6 +157,10 @@ export const compile = converter<(ctx: Ctx) => string>({
 });
 
 
+if (compile instanceof ConfigurationError) {
+  throw compile;
+}
+
 export default <T extends Record<string, any>>(query: CriteruimQuery<T>, options?: Partial<Ctx>) => {
   const ctx = {
     DIALECT: 2,
@@ -164,8 +168,13 @@ export default <T extends Record<string, any>>(query: CriteruimQuery<T>, options
     ...(options || {})
   };
 
+  const run = compile(query);
+  if (run instanceof QueryValidationError) {
+    return run
+  }
+
   return [
-    compile(query)(ctx) as string || '*', 
+    run(ctx) as string || '*', 
     Object.keys(ctx.PARAMS).length > 0 ? ctx : { DIALECT: ctx.DIALECT }
   ] as const;
 }

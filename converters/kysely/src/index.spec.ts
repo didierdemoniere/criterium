@@ -3,6 +3,7 @@ import toKysely from './index';
 import { expect } from 'expect';
 import { connectingClient } from './postgres';
 import { Generated, ColumnType, Kysely, PostgresDialect, SelectQueryBuilder, sql } from 'kysely';
+import { QueryValidationError } from '@criterium/core';
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 
@@ -69,25 +70,36 @@ describe('kysely - postgres', () => {
   describe('operators', () => {
     describe('empty query', () => {
       test('should match everything', async () => {
-        const results = await persons.where(toKysely<DB['person']>({})).execute();
+        const test = toKysely<DB['person']>({});
+        if (test instanceof QueryValidationError) throw test;
+        const results = await persons.where(test).execute();
         expect(results.length).toEqual(2);
       });
     });
     describe('$eq', () => {
       test('should support all supported types', async () => {
-        const resultName = await persons.where(toKysely<DB['person']>({ name: 'John' })).execute();
+        const testName = toKysely<DB['person']>({ name: 'John'  });
+        if (testName instanceof QueryValidationError) throw testName;
+        const resultName = await persons.where(testName).execute();
         expect(resultName.length).toEqual(1);
         expect(resultName[0].name).toEqual('John');
 
-        const resultAge = await persons.where(toKysely<DB['person']>({ age: 30 })).execute();
+
+        const testAge = toKysely<DB['person']>({ age: 30  });
+        if (testAge instanceof QueryValidationError) throw testAge;
+        const resultAge = await persons.where(testAge).execute();
         expect(resultAge.length).toEqual(1);
         expect(resultAge[0].age).toEqual(30);
 
-        const resultIsActive = await persons.where(toKysely<DB['person']>({ is_active: true })).execute();
+        const testIsActive = toKysely<DB['person']>({ age: 30  });
+        if (testIsActive instanceof QueryValidationError) throw testIsActive;
+        const resultIsActive = await persons.where(testIsActive).execute();
         expect(resultIsActive.length).toEqual(1);
         expect(resultIsActive[0].is_active).toEqual(true);
 
-        const resultBirthDate = await persons.where(toKysely<DB['person']>({ birth_date: new Date('1990-01-01') })).execute();
+        const testBirthDate = toKysely<DB['person']>({ birth_date: new Date('1990-01-01')  });
+        if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
+        const resultBirthDate = await persons.where(testBirthDate).execute();
         expect(resultBirthDate.length).toEqual(1);
         expect(resultBirthDate[0].birth_date).toEqual(new Date('1990-01-01'));
       });
@@ -95,19 +107,27 @@ describe('kysely - postgres', () => {
 
     describe('$ne', () => {
       test('should support all supported types', async () => {
-        const resultName = await persons.where(toKysely<DB['person']>({ name: { $ne: 'John' } })).execute();
+        const testName = toKysely<DB['person']>({ name: { $ne: 'John' }  });
+        if (testName instanceof QueryValidationError) throw testName;
+        const resultName = await persons.where(testName).execute();
         expect(resultName.length).toEqual(1);
         expect(resultName[0].name).not.toEqual('John');
 
-        const resultAge = await persons.where(toKysely<DB['person']>({ age: { $ne: 30 } })).execute();
+        const testAge = toKysely<DB['person']>({ age: { $ne: 30 } });
+        if (testAge instanceof QueryValidationError) throw testAge;
+        const resultAge = await persons.where(testAge).execute();
         expect(resultAge.length).toEqual(1);
         expect(resultAge[0].age).not.toEqual(30);
 
-        const resultIsActive = await persons.where(toKysely<DB['person']>({ is_active: { $ne: true } })).execute();
+        const testIsActive = toKysely<DB['person']>({ is_active: { $ne: true } });
+        if (testIsActive instanceof QueryValidationError) throw testIsActive;
+        const resultIsActive = await persons.where(testIsActive).execute();
         expect(resultIsActive.length).toEqual(1);
         expect(resultIsActive[0].is_active).not.toEqual(1);
 
-        const resultBirthDate = await persons.where(toKysely<DB['person']>({ birth_date: { $ne: new Date('1990-01-01') } })).execute();
+        const testBirthDate = toKysely<DB['person']>({ birth_date: { $ne: new Date('1990-01-01') } });
+        if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
+        const resultBirthDate = await persons.where(testBirthDate).execute();
         expect(resultBirthDate.length).toEqual(1);
         expect(resultBirthDate[0].birth_date).not.toEqual(new Date('1990-01-01'));
       });
@@ -115,128 +135,152 @@ describe('kysely - postgres', () => {
 
     describe('$gt', () => {
       test('should support all supported types', async () => {
-        expect(() => {
-          //@ts-ignore
-          persons.where(toKysely<DB['person']>({ name: { $gt: 'John' } })).execute()
-        }).toThrowError("unexpected value for operator $gt at '$.name.$gt'")
+        // @ts-ignore
+        expect(toKysely<DB['person']>({ name: { $gt: 'John' } })).toEqual(new Error("unexpected value for operator $gt at '$.name.$gt'"));
 
-        const resultAge = await persons.where(toKysely<DB['person']>({ age: { $gt: 30 } })).execute();
+        const testAge = toKysely<DB['person']>({ age: { $gt: 30 } });
+        if (testAge instanceof QueryValidationError) throw testAge;
+        const resultAge = await persons.where(testAge).execute();
         expect(resultAge.length).toEqual(0);
 
-        expect(() => {
-          //@ts-ignore
-          persons.where(toKysely<DB['person']>({ is_active: { $gt: true } })).execute()
-        }).toThrowError("unexpected value for operator $gt at '$.is_active.$gt'")
+        // @ts-ignore
+        expect(toKysely<DB['person']>({ is_active: { $gt: true } })).toEqual(new Error("unexpected value for operator $gt at '$.is_active.$gt'"));
 
-        const resultBirthDate = await persons.where(toKysely<DB['person']>({ birth_date: { $gt: new Date('1990-01-01') } })).execute();
+        const testBirthDate = toKysely<DB['person']>({ birth_date: { $gt: new Date('1990-01-01') } });
+        if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
+        const resultBirthDate = await persons.where(testBirthDate).execute();
         expect(resultBirthDate.length).toEqual(1);
       });
     });
 
     describe('$gte', () => {
       test('should support all supported types', async () => {
-        expect(() => {
-          //@ts-ignore
-          persons.where(toKysely<DB['person']>({ name: { $gte: 'John' } })).execute();
-        }).toThrowError("unexpected value for operator $gte at '$.name.$gte'");
+        // @ts-ignore
+        expect(toKysely<DB['person']>({ name: { $gte: 'John' } })).toEqual(new Error("unexpected value for operator $gte at '$.name.$gte'"));
 
-        const resultAge = await persons.where(toKysely<DB['person']>({ age: { $gte: 30 } })).execute();
+        const testAge = toKysely<DB['person']>({ age: { $gte: 30 } });
+        if (testAge instanceof QueryValidationError) throw testAge;
+        const resultAge = await persons.where(testAge).execute();
         expect(resultAge.length).toEqual(1);
 
-        expect(() => {
-          //@ts-ignore
-          persons.where(toKysely<DB['person']>({ is_active: { $gte: true } })).execute();
-        }).toThrowError("unexpected value for operator $gte at '$.is_active.$gte'");
+        // @ts-ignore
+        expect(toKysely<DB['person']>({ is_active: { $gte: true } })).toEqual(new Error("unexpected value for operator $gte at '$.is_active.$gte'"));
 
-        const resultBirthDate = await persons.where(toKysely<DB['person']>({ birth_date: { $gte: new Date('1990-01-01') } })).execute();
+        const testBirthDate = toKysely<DB['person']>({ birth_date: { $gte: new Date('1990-01-01') } });
+        if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
+        const resultBirthDate = await persons.where(testBirthDate).execute();
         expect(resultBirthDate.length).toEqual(2);
       });
     });
 
     describe('$lt', () => {
       test('should support all supported types', async () => {
-        expect(() => {
-          //@ts-ignore
-          persons.where(toKysely<DB['person']>({ name: { $lt: 'John' } })).execute();
-        }).toThrowError("unexpected value for operator $lt at '$.name.$lt'");
+        // @ts-ignore
+        expect(toKysely<DB['person']>({ name: { $lt: 'John' } })).toEqual(new Error("unexpected value for operator $lt at '$.name.$lt'"));
 
-        const resultAge = await persons.where(toKysely<DB['person']>({ age: { $lt: 30 } })).execute();
+        const testAge = toKysely<DB['person']>({ age: { $lt: 30 } });
+        if (testAge instanceof QueryValidationError) throw testAge;
+        const resultAge = await persons.where(testAge).execute();
         expect(resultAge.length).toEqual(1);
 
-        expect(() => {
-          //@ts-ignore
-          persons.where(toKysely<DB['person']>({ is_active: { $lt: true } })).execute();
-        }).toThrowError("unexpected value for operator $lt at '$.is_active.$lt'");
+        // @ts-ignore
+        expect(toKysely<DB['person']>({ is_active: { $lt: true } })).toEqual(new Error("unexpected value for operator $lt at '$.is_active.$lt'"));
 
-        const resultBirthDate = await persons.where(toKysely<DB['person']>({ birth_date: { $lt: new Date('1990-01-01') } })).execute();
+        const testBirthDate = toKysely<DB['person']>({ birth_date: { $lt: new Date('1990-01-01') } });
+        if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
+        const resultBirthDate = await persons.where(testBirthDate).execute();
         expect(resultBirthDate.length).toEqual(0);
       });
     });
 
     describe('$lte', () => {
       test('should support all supported types', async () => {
-        expect(() => {
-          //@ts-ignore
-          persons.where(toKysely<DB['person']>({ name: { $lte: 'John' } })).execute();
-        }).toThrowError("unexpected value for operator $lte at '$.name.$lte'");
+        // @ts-ignore
+        expect(toKysely<DB['person']>({ name: { $lte: 'John' } })).toEqual(new Error("unexpected value for operator $lte at '$.name.$lte'"));
 
-        const resultAge = await persons.where(toKysely<DB['person']>({ age: { $lte: 30 } })).execute();
+        const testAge = toKysely<DB['person']>({ age: { $lte: 30 } });
+        if (testAge instanceof QueryValidationError) throw testAge;
+        const resultAge = await persons.where(testAge).execute();
         expect(resultAge.length).toEqual(2);
 
-        expect(() => {
-          //@ts-ignore
-          persons.where(toKysely<DB['person']>({ is_active: { $lte: true } })).execute();
-        }).toThrowError("unexpected value for operator $lte at '$.is_active.$lte'");
+        // @ts-ignore
+        expect(toKysely<DB['person']>({ is_active: { $lte: true } })).toEqual(new Error("unexpected value for operator $lte at '$.is_active.$lte'"));
 
-        const resultBirthDate = await persons.where(toKysely<DB['person']>({ birth_date: { $lte: new Date('1990-01-01') } })).execute();
+        const testBirthDate = toKysely<DB['person']>({ birth_date: { $lte: new Date('1990-01-01') } });
+        if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
+        const resultBirthDate = await persons.where(testBirthDate).execute();
         expect(resultBirthDate.length).toEqual(1);
       });
     });
 
     describe('$in', () => {
       test('should support all supported types', async () => {
-        const resultName = await persons.where(toKysely<DB['person']>({ name: { $in: ['John'] } })).execute();
+        const testName = toKysely<DB['person']>({ name: { $in: ['John'] } });
+        if (testName instanceof QueryValidationError) throw testName;
+        const resultName = await persons.where(testName).execute();
         expect(resultName.length).toEqual(1);
 
-        const resultAge = await persons.where(toKysely<DB['person']>({ age: { $in: [30] } })).execute();
+        const testAge = toKysely<DB['person']>({ age: { $in: [30] } });
+        if (testAge instanceof QueryValidationError) throw testAge;
+        const resultAge = await persons.where(testAge).execute();
         expect(resultAge.length).toEqual(1);
 
-        const resultIsActive = await persons.where(toKysely<DB['person']>({ is_active: { $in: [true] } })).execute();
+        const testIsActive = toKysely<DB['person']>({ is_active: { $in: [true] } });
+        if (testIsActive instanceof QueryValidationError) throw testIsActive;
+        const resultIsActive = await persons.where(testIsActive).execute();
         expect(resultIsActive.length).toEqual(1);
 
-        const resultBirthDate = await persons.where(toKysely<DB['person']>({ birth_date: { $in: [new Date('1990-01-01')] } })).execute();
+        const testBirthDate = toKysely<DB['person']>({ birth_date: { $in: [new Date('1990-01-01')] } });
+        if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
+        const resultBirthDate = await persons.where(testBirthDate).execute();
         expect(resultBirthDate.length).toEqual(1);
       });
     });
 
     describe('$nin', () => {
       test('should support all supported types', async () => {
-        const resultName = await persons.where(toKysely<DB['person']>({ name: { $nin: ['John'] } })).execute();
+        const testName = toKysely<DB['person']>({ name: { $nin: ['John'] } });
+        if (testName instanceof QueryValidationError) throw testName;
+        const resultName = await persons.where(testName).execute();
         expect(resultName.length).toEqual(1);
 
-        const resultAge = await persons.where(toKysely<DB['person']>({ age: { $nin: [30] } })).execute();
+        const testAge = toKysely<DB['person']>({ age: { $nin: [30] } });
+        if (testAge instanceof QueryValidationError) throw testAge;
+        const resultAge = await persons.where(testAge).execute();
         expect(resultAge.length).toEqual(1);
 
-        const resultIsActive = await persons.where(toKysely<DB['person']>({ is_active: { $nin: [true] } })).execute();
+        const testIsActive = toKysely<DB['person']>({ is_active: { $nin: [true] } });
+        if (testIsActive instanceof QueryValidationError) throw testIsActive;
+        const resultIsActive = await persons.where(testIsActive).execute();
         expect(resultIsActive.length).toEqual(1);
 
-        const resultBirthDate = await persons.where(toKysely<DB['person']>({ birth_date: { $nin: [new Date('1990-01-01')] } })).execute();
+        const testBirthDate = toKysely<DB['person']>({ birth_date: { $nin: [new Date('1990-01-01')] } });
+        if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
+        const resultBirthDate = await persons.where(testBirthDate).execute();
         expect(resultBirthDate.length).toEqual(1);
       });
     });
 
     describe('$exists', () => {
       test('should support all supported types', async () => {
-        const resultName = await persons.where(toKysely<DB['person']>({ name: { $exists: true } })).execute();
+        const testName = toKysely<DB['person']>({ name: { $exists: true } });
+        if (testName instanceof QueryValidationError) throw testName;
+        const resultName = await persons.where(testName).execute();
         expect(resultName.length).toEqual(2);
 
-        const resultAge = await persons.where(toKysely<DB['person']>({ age: { $exists: false } })).execute();
+        const testAge = toKysely<DB['person']>({ age: { $exists: false } });
+        if (testAge instanceof QueryValidationError) throw testAge;
+        const resultAge = await persons.where(testAge).execute();
         expect(resultAge.length).toEqual(0);
 
-        const resultIsActive = await persons.where(toKysely<DB['person']>({ is_active: { $exists: true } })).execute();
+        const testIsActive = toKysely<DB['person']>({ is_active: { $exists: true } });
+        if (testIsActive instanceof QueryValidationError) throw testIsActive;
+        const resultIsActive = await persons.where(testIsActive).execute();
         expect(resultIsActive.length).toEqual(2);
 
-        const resultBirthDate = await persons.where(toKysely<DB['person']>({ birth_date: { $exists: false } })).execute();
+        const testBirthDate = toKysely<DB['person']>({ birth_date: { $exists: false } });
+        if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
+        const resultBirthDate = await persons.where(testBirthDate).execute();
         expect(resultBirthDate.length).toEqual(0);
       });
     });
@@ -245,102 +289,125 @@ describe('kysely - postgres', () => {
     //   test('should support all supported types', async () => {
     //     const sqlArr = (values: any[]) => sql`ARRAY[${sql.join(values)}]`;
         
-    //     const result1 = await persons.where(toKysely<DB['person']>({ intrests: { $all: (['sports', 'programming']) } })).execute();
+    //     const test1 = toKysely<DB['person']>({ intrests: { $all: (['sports', 'programming']) } });
+    //      if (test1 instanceof QueryValidationError) throw test1;
+    //      const result1 = await persons.where(test1).execute();
     //     expect(result1.length).toEqual(1);
 
-    //     const result2 = await persons.where(toKysely<DB['person']>({ intrests: { $all: (['sports', 'music']) } })).execute();
+    //     const test2 = toKysely<DB['person']>({ intrests: { $all: (['sports', 'music']) } });
+    //     if (test2 instanceof QueryValidationError) throw test2;
+    //     const result2 = await persons.where(test2).execute();
     //     expect(result2.length).toEqual(1);
 
-    //     const result3 = await persons.where(toKysely<DB['person']>({ intrests: { $all: (['sports']) } })).execute();
+    //     const test3 = toKysely<DB['person']>({ intrests: { $all: (['sports']) } });
+    //     if (test3 instanceof QueryValidationError) throw test3;
+    //     const result3 = await persons.where(test3).execute();
     //     expect(result3.length).toEqual(2);
     //   });
     // });
 
     describe('$like', () => {
       test('should support all supported types', async () => {
-        const resultName = await persons.where(toKysely<DB['person']>({ name: { $like: 'Jo%' } })).execute();
+        const conditions = toKysely<DB['person']>({ name: { $like: 'Jo%' } });
+        if (conditions instanceof QueryValidationError) throw conditions;
+  
+        const resultName = await persons.where(conditions).execute();
         expect(resultName.length).toEqual(1);
 
-        expect(() => {
-          //@ts-ignore
-          persons.where(toKysely<DB['person']>({ age: { $like: 30 } })).execute();
-        }).toThrowError("unexpected value for operator $like at '$.age.$like'");
+        //@ts-ignore
+        expect(toKysely<DB['person']>({ age: { $like: 30 } })).toEqual(new Error("unexpected value for operator $like at '$.age.$like'"));
+        
+        //@ts-ignore
+        expect(toKysely<DB['person']>({ is_active: { $like: true } })).toEqual(new Error("unexpected value for operator $like at '$.is_active.$like'"));
 
-        expect(() => {
-          //@ts-ignore
-          persons.where(toKysely<DB['person']>({ is_active: { $like: true } })).execute();
-        }).toThrowError("unexpected value for operator $like at '$.is_active.$like'");
-
-        expect(() => {
-          //@ts-ignore
-          persons.where(toKysely<DB['person']>({ birth_date: { $like: new Date('1990-01-01') } })).execute();
-        }).toThrowError("unexpected value for operator $like at '$.birth_date.$like'");
+        //@ts-ignore
+        expect(toKysely<DB['person']>({ birth_date: { $like: new Date('1990-01-01') } })).toEqual(new Error("unexpected value for operator $like at '$.birth_date.$like'"));
       });
     });
 
     describe('$not', () => {
       test('should support all supported types', async () => {
-        const resultName = await persons.where(toKysely<DB['person']>({ name: { $not: { $eq: 'John' } } })).execute();
+        const testName = toKysely<DB['person']>({ name: { $not: { $eq: 'John' } } });
+        if (testName instanceof QueryValidationError) throw testName;
+        const resultName = await persons.where(testName).execute();
         expect(resultName.length).toEqual(1);
 
-        const resultAge = await persons.where(toKysely<DB['person']>({ age: { $not: { $eq: 30 } } })).execute();
+        const testAge = toKysely<DB['person']>({ age: { $not: { $eq: 30 } } });
+        if (testAge instanceof QueryValidationError) throw testAge;
+        const resultAge = await persons.where(testAge).execute();
         expect(resultAge.length).toEqual(1);
 
-        const resultIsActive = await persons.where(toKysely<DB['person']>({ is_active: { $not: { $eq: true } } })).execute();
+        const testIsActive = toKysely<DB['person']>({ is_active: { $not: { $eq: true } } });
+        if (testIsActive instanceof QueryValidationError) throw testIsActive;
+        const resultIsActive = await persons.where(testIsActive).execute();
         expect(resultIsActive.length).toEqual(1);
 
-        const resultBirthDate = await persons.where(toKysely<DB['person']>({ birth_date: { $not: { $eq: new Date('1990-01-01') } } })).execute();
+        const testBirthDate = toKysely<DB['person']>({ birth_date: { $not: { $eq: new Date('1990-01-01') } } });
+        if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
+        const resultBirthDate = await persons.where(testBirthDate).execute();
         expect(resultBirthDate.length).toEqual(1);
       });
     });
 
     describe('$and', () => {
       test('should support all supported types', async () => {
-        const resultNameAndAge = await persons.where(toKysely<DB['person']>({
+        const testNameAndAge = toKysely<DB['person']>({
           $and: [{ name: { $eq: 'John' } }, { age: { $eq: 30 } }],
-        })).execute();
+        });
+        if (testNameAndAge instanceof QueryValidationError) throw testNameAndAge;
+        const resultNameAndAge = await persons.where(testNameAndAge).execute();
         expect(resultNameAndAge.length).toEqual(1);
 
-        const resultIsActiveAndBirthDate = await persons.where(toKysely<DB['person']>({
+        const testIsActiveAndBirthDate = toKysely<DB['person']>({
           $and: [
             { is_active: { $eq: true } },
             { birth_date: { $eq: new Date('1990-01-01') } },
           ],
-        })).execute();
+        });
+        if (testIsActiveAndBirthDate instanceof QueryValidationError) throw testIsActiveAndBirthDate;
+        const resultIsActiveAndBirthDate = await persons.where(testIsActiveAndBirthDate).execute();
         expect(resultIsActiveAndBirthDate.length).toEqual(1);
       });
     });
 
     describe('$or', () => {
       test('should support all supported types', async () => {
-        const resultNameAndAge = await persons.where(toKysely<DB['person']>({
+        const testNameAndAge = toKysely<DB['person']>({
           $or: [{ name: { $eq: 'John' } }, { age: { $eq: 30 } }],
-        })).execute();
+        });
+        if (testNameAndAge instanceof QueryValidationError) throw testNameAndAge;
+        const resultNameAndAge = await persons.where(testNameAndAge).execute();
         expect(resultNameAndAge.length).toEqual(1);
 
-        const resultIsActiveAndBirthDate = await persons.where(toKysely<DB['person']>({
+        const testIsActiveAndBirthDate = toKysely<DB['person']>({
           $or: [
             { is_active: { $eq: true } },
             { birth_date: { $eq: new Date('1990-01-01') } },
           ],
-        })).execute();
+        });
+        if (testIsActiveAndBirthDate instanceof QueryValidationError) throw testIsActiveAndBirthDate;
+        const resultIsActiveAndBirthDate = await persons.where(testIsActiveAndBirthDate).execute();
         expect(resultIsActiveAndBirthDate.length).toEqual(1);
       });
     });
 
     describe('$nor', () => {
       test('should support all supported types', async () => {
-        const resultNameAndAge = await persons.where(toKysely<DB['person']>({
+        const testNameAndAge = toKysely<DB['person']>({
           $nor: [{ name: { $eq: 'John' } }, { age: { $eq: 30 } }],
-        })).execute();
+        });
+        if (testNameAndAge instanceof QueryValidationError) throw testNameAndAge;
+        const resultNameAndAge = await persons.where(testNameAndAge).execute();
         expect(resultNameAndAge.length).toEqual(1);
 
-        const resultIsActiveAndBirthDate = await persons.where(toKysely<DB['person']>({
+        const testIsActiveAndBirthDate = toKysely<DB['person']>({
           $nor: [
             { is_active: { $eq: true } },
             { birth_date: { $eq: new Date('1990-01-01') } },
           ],
-        })).execute();
+        });
+        if (testIsActiveAndBirthDate instanceof QueryValidationError) throw testIsActiveAndBirthDate;
+        const resultIsActiveAndBirthDate = await persons.where(testIsActiveAndBirthDate).execute();
         expect(resultIsActiveAndBirthDate.length).toEqual(1);
       });
     });

@@ -1,5 +1,5 @@
 import { ExpressionBuilder, ExpressionWrapper, SqlBool } from 'kysely'
-import { converter, type CriteruimQuery } from '@criterium/core';
+import { ConfigurationError, converter, QueryValidationError, type CriteruimQuery } from '@criterium/core';
 
 const compile = converter<(eb: ExpressionBuilder<any, any>) => ExpressionWrapper<any, any, SqlBool>>({
   operators: {
@@ -53,6 +53,10 @@ const compile = converter<(eb: ExpressionBuilder<any, any>) => ExpressionWrapper
 
 export type Match<DB, T extends Record<string, any>> = { [TB in keyof DB]:  DB[TB] extends T? TB : never; }[keyof DB];
 
+if (compile instanceof ConfigurationError) {
+  throw compile
+}
+
 export default <X extends Record<string, any>>(query: CriteruimQuery<X>) => {
-  return compile(query) as <DB, TB extends Match<DB, X>>(eb: ExpressionBuilder<DB, TB>) => ExpressionWrapper<DB, TB, SqlBool>
+  return compile(query) as (<DB, TB extends Match<DB, X>>(eb: ExpressionBuilder<DB, TB>) => ExpressionWrapper<DB, TB, SqlBool>) | QueryValidationError
 }

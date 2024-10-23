@@ -1,6 +1,6 @@
 {
   "name": "@criterium/js",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "convert criterium queries into predicate for javascript arrays",
   "main": "build/main/index.js",
   "types": "build/main/index.d.ts",

@@ -1,4 +1,4 @@
-import { converter, utils } from '@criterium/core';
+import { ConfigurationError, converter, CriteruimQuery, utils, QueryValidationError } from '@criterium/core';
 
 export const converterOptions = {
   predicate: {
@@ -14,7 +14,7 @@ const coerce = (val: any) => {
   return typeof val !== 'boolean' && !isNaN(val) ? Number(val) : val;
 };
 
-export default converter<(item) => boolean>({
+const compile = converter<(item) => boolean>({
   operators: {
     $and: (_, __, children) => {
       return (item) =>
@@ -91,3 +91,9 @@ export default converter<(item) => boolean>({
     },
   },
 });
+
+if (compile instanceof ConfigurationError) {
+  throw compile;
+}
+
+export default compile as <Data extends Record<string, any>>(query: CriteruimQuery<Data>) => ((item: any) => boolean) | QueryValidationError;
