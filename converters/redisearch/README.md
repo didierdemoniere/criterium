@@ -1,8 +1,6 @@
-# @criterium/redissearch
+# @criterium/redisearch
 
-@criterium/redissearch is a component of the Criterium project that provides a converter for Redisearch. This component makes it easy to extract data from Redis databases that have been indexed with Redisearch.
-
-With @criterium/redisearch, you can translate your Criterium queries into Redisearch-compatible search queries, and extract data from your Redis databases with ease. This component provides a simple and intuitive interface for working with Redisearch, and makes it easy to extract the information you need from your Redis databases.
+@criterium/redisearch allow to add filter, sort and pagination to redis search queries using mongo-like syntax.
 
 ## install
 
@@ -14,33 +12,59 @@ npm i @criterium/redisearch
 
 ```ts
 import { createClient, SchemaFieldTypes } from 'redis';
-import toRedisSearch from '@criterium/redisearch';
+import customize, { QueryValidationError }  from '@criterium/redisearch';
 
 const client = createClient();
 await client.connect();
 
-await redisClient.json.set('users:1', '$', {
-  name: 'John',
+await redisClient.json.set('posts:0', '$', { 
+  created: new Date("2025-02-01").getTime(), 
+  title: 'will bitcoin continue to fall ?' 
+});
+
+await redisClient.json.set('posts:1', '$', { 
+  created: new Date("2025-02-15").getTime(), 
+  title: 'can solana hold this time ?'
+});
+
+await redisClient.json.set('posts:2', '$', { 
+  created: new Date("2024-03-15").getTime(), 
+  title: 'solana vs bitcoin vs ethereum'
 });
 
 await redisClient.ft.create(
-  'idx:users',
+  'idx:posts',
   {
-    '$.name': {
+    '$.created': {
+      type: SchemaFieldTypes.NUMERIC,
+      SORTABLE: true,
+      AS: 'created',
+    },
+    '$.title': {
       type: SchemaFieldTypes.TEXT,
       SORTABLE: true,
-      AS: 'name',
+      AS: 'title',
     },
   },
   {
     ON: 'JSON',
-    PREFIX: 'users',
+    PREFIX: 'posts',
   },
 );
 
-const result = await redisClient.ft.search(
-  'idx:users',
-  ...toRedisSearch({ name: 'John' }),
-);
+const query = customize(['idx:posts'], {
+  $and: [
+    { created: { $gte: new Date("2025-01-01") } },
+    { title: { $like: 'bitcoin %' } },
+  ],
+  $sort: { created: -1 },
+  $limit: 15
+});
+
+if (query instanceof QueryValidationError) throw query;
+//or if (query instanceof Error) throw query;
+
+const result = await redisClient.ft.search(...query);
+console.log(results);
 // { total: 1, documents:[{...}] }
 ```

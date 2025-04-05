@@ -1,18 +1,41 @@
 import z from 'zod';
-import type { CriteruimQuery, CriteruimExpression } from '@criterium/core';
+import type { CriteruimQuery, CriteruimFilterQuery, CriteruimExpression, CriteruimSortQuery } from '@criterium/core';
 
 export type { CriteruimQuery };
 
 export function queryOf<S extends z.ZodObject<any>>(
   schema: S,
 ): z.Schema<CriteruimQuery<z.infer<S>>> {
+  const filter: any = filterOf(schema);
+
+  return filter.merge(z.object({
+    $sort: sorterOf(schema).optional(),
+    $skip: z.number().optional(),
+    $limit: z.number().optional(),
+  })).strict();
+}
+
+function filterOf<S extends z.ZodObject<any>>(
+  schema: S,
+): z.Schema<CriteruimFilterQuery<z.infer<S>>> {
   const query: any = z.object({
     $and: z.array(z.lazy(() => query)).optional(),
     $or: z.array(z.lazy(() => query)).optional(),
     $nor: z.array(z.lazy(() => query)).optional(),
   });
 
-  return query.merge(expressionOf(schema)).strict();
+  return query.merge(expressionOf(schema));
+}
+
+function sorterOf<S extends z.ZodObject<any>>(
+  schema: S,
+): z.Schema<CriteruimSortQuery<z.infer<S>>> {
+  return z.object({
+    ...Object.keys(schema.shape).reduce((obj, key) => {
+      obj[key] = z.union([z.literal(1), z.literal(-1)]).optional();
+      return obj;
+    }, {} as any)
+  });
 }
 
 function expressionOf<S extends z.Schema<any>>(

@@ -1,7 +1,48 @@
-## criterium
+# Criterium
 
-Criterium is an open source project that provides a collection of parsers, validators and compilers for querying databases and search engines. This project aims to simplify the process of extracting and manipulating data from these sources, by providing a unified and efficient interface.
+Criterium allow you to enrich database queries with mongo-style syntax.
 
-The parsers in Criterium allow you to transform raw text into a unified query structure, while the validators ensure the accuracy and consistency of this structure. The compilers take the parsed and validated structure, and translate it into a format that can be used by databases and search engines.
+## Why
 
-With Criterium, you can easily and securely execute arbitrary and complex query and extract the information you need, all in a fast and efficient manner. So if you're looking for a powerful tool to help you with your data management and extraction needs, give Criterium a try!
+query builders unlike orm allow to create optimized and safe queries, but they are not easily customisable.
+mongo-style queries on the other end are easy to read, customize and serialize.
+
+by levraging query builders as a foundation and mongo-style syntax it become easy to expose optimized, safe AND customisable API endpoint.
+
+eg:
+```js
+// expertly crafted query
+const crazySQLQuery = db.selectFrom('posts').selectAll();
+
+// customisation sent by the client
+const clientFilter = {
+  $and: [
+    { created: { $gte: new Date("2025-01-01") } },
+    { content: { $like: '%bitcoin%' } },
+  ],
+  $sort: { created: -1 },
+  $limit: 15
+}:
+
+// 🪄 tada
+const query = customize(crazySQLQuery, clientFilter);
+return query.execute();
+```
+
+## Status
+
+### Converters
+✅ Js array
+✅ kysely
+✅ redissearch
+
+### Validators
+✅ zod 
+
+## Roadmap
+
+### Converters
+🔲 drizzle
+
+### Validators
+🔲 typebox

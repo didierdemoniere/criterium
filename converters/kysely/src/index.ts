@@ -1,62 +1,47 @@
-import { ExpressionBuilder, ExpressionWrapper, SqlBool } from 'kysely'
-import { ConfigurationError, converter, QueryValidationError, type CriteruimQuery } from '@criterium/core';
+import { CriteruimFilterQuery, CriteruimQuery, QueryValidationError } from '@criterium/core'
+import { filter } from './filter'
+import { sort } from './sort'
+import { CompiledQuery, ExpressionBuilder, ExpressionWrapper, SqlBool } from 'kysely';
+import { offset } from './offset'
+import { limit } from './limit'
 
-const compile = converter<(eb: ExpressionBuilder<any, any>) => ExpressionWrapper<any, any, SqlBool>>({
-  operators: {
-    $and: (_: any, __: any, children) => {
-      return ({ eb, and }) => and(children.map(child => child(eb)))
-    },
-    $or: (_: any, __: any, children) => {
-      return ({ eb, or }) => or(children.map(child => child(eb)))
-    },
-    $nor: (_: any, __: any, children) => {
-      return ({ eb, not, or }) => not(or(children.map(child => child(eb))))
-    },
-    $not: (_: any, __: any, children) => {
-      return ({ eb, not, and }) => not(and(children.map(child => child(eb))))
-    },
-    // $all: (dataPath: Array<number | string>, values: any[]) => {
-    //   return ({ eb }) => eb(dataPath.join('.'), '@>', values)
-    // },
-    $in: (dataPath: Array<number | string>, values: any[]) => {
-      return ({ eb }) => eb(dataPath.join('.'), 'in', values)
-    },
-    $nin: (dataPath: Array<number | string>, values: any[]) => {
-      return ({ eb }) => eb(dataPath.join('.'), 'not in', values)
-    },
-    $gt: (dataPath: Array<number | string>, value: any) => {
-      return ({ eb }) => eb(dataPath.join('.'), '>', value)
-    },
-    $gte: (dataPath: Array<number | string>, value: any) => {
-      return ({ eb }) => eb(dataPath.join('.'), '>=', value)
-    },
-    $lt: (dataPath: Array<number | string>, value: any) => {
-      return ({ eb }) => eb(dataPath.join('.'), '<', value)
-    },
-    $lte: (dataPath: Array<number | string>, value: any) => {
-      return ({ eb }) => eb(dataPath.join('.'), '<=', value)
-    },
-    $ne: (dataPath: Array<number | string>, value: any) => {
-      return ({ eb }) => eb(dataPath.join('.'), '!=', value)
-    },
-    $eq: (dataPath: Array<number | string>, value: any) => {
-      return ({ eb }) => eb(dataPath.join('.'), '=', value)
-    },
-    $like: (dataPath: Array<number | string>, value: any) => {
-      return ({ eb }) => eb(dataPath.join('.'), 'like', value)
-    },
-    $exists: (dataPath: Array<number | string>, value: boolean) => {
-      return ({ eb }) =>  eb(dataPath.join('.'), value ? 'is not' : 'is', null)
+export type KyselyQuery<Data> = {
+  compile(): CompiledQuery<Data>;
+  where(conditions: (eb: ExpressionBuilder<any, any>) => ExpressionWrapper<any, any, SqlBool>): KyselyQuery<Data>;
+  orderBy(prop: string, direction: 'asc' | 'desc'): KyselyQuery<Data>;
+  offset(value: number): KyselyQuery<Data>;
+  limit(value: number): KyselyQuery<Data>;
+}
+
+type KyselyQueryOutput<T extends KyselyQuery<any>> = ReturnType<T['compile']> extends CompiledQuery<infer X> 
+  ? X extends Record<string, any> ? X : never : never;
+
+export { type CriteruimQuery, QueryValidationError };
+
+export default <Q extends KyselyQuery<any>> (baseQuery: Q, query: CriteruimQuery<KyselyQueryOutput<Q>>) => {
+  const { $sort, $limit, $skip, ...conditions } = query;
+  let kQuery: Q = baseQuery;
+
+  if (Object.keys(conditions).length > 0) {
+    const queryFilter = filter(conditions as CriteruimFilterQuery<ReturnType<Q['compile']>>);
+    if (queryFilter instanceof QueryValidationError) {
+      return queryFilter
     }
+    kQuery = queryFilter(kQuery);
   }
-});
 
-export type Match<DB, T extends Record<string, any>> = { [TB in keyof DB]:  DB[TB] extends T? TB : never; }[keyof DB];
+  if ($sort && Object.keys($sort).length > 0) {
+    kQuery = sort($sort)(kQuery);
+  }
 
-if (compile instanceof ConfigurationError) {
-  throw compile
-}
+  if (typeof $skip === 'number') {
+    kQuery = offset($skip)(kQuery);
+  }
 
-export default <X extends Record<string, any>>(query: CriteruimQuery<X>) => {
-  return compile(query) as (<DB, TB extends Match<DB, X>>(eb: ExpressionBuilder<DB, TB>) => ExpressionWrapper<DB, TB, SqlBool>) | QueryValidationError
-}
+  if (typeof $limit === 'number') {
+    kQuery = limit($limit)(kQuery);
+  }
+
+  return kQuery;
+};
+

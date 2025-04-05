@@ -1,7 +1,11 @@
 {
   "name": "@criterium/core",
-  "version": "0.2.0",
-  "description": "create criterium converters",
+  "version": "0.3.0",
+  "description": "helper to create mongo-like filtering",
+  "keywords": [
+    "mongodb",
+    "mongo"
+  ],
   "main": "build/main/index.js",
   "types": "build/main/index.d.ts",
   "module": "build/module/index.js",
@@ -22,7 +26,6 @@
     "test": "tsx --test src/**/*.spec.ts",
     "test:dev": "tsx --test --watch src/**/*.spec.ts"
   },
-  "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {

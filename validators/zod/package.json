@@ -1,7 +1,12 @@
 {
   "name": "@criterium/zod",
-  "version": "0.0.3",
-  "description": "transform a zod entity schema to criterium query schema",
+  "version": "0.0.4",
+  "description": "create the zod query schema for a given zod entity schema",
+  "keywords": [
+    "mongodb",
+    "mongo",
+    "zod"
+  ],
   "main": "build/main/index.js",
   "types": "build/main/index.d.ts",
   "module": "build/module/index.js",
@@ -22,7 +27,6 @@
     "test": "tsx --test src/**/*.spec.ts",
     "test:dev": "tsx --test --watch src/**/*.spec.ts"
   },
-  "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {

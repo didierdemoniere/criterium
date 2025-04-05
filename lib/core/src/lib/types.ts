@@ -3,7 +3,7 @@ import { operators } from './validation';
 /**
  *
  */
-export type CriteriumOperator<T> = (
+type CriteriumOperator<T> = (
   path: Array<string | number>,
   value: any,
   children: Array<T>,
@@ -71,10 +71,20 @@ export type CriteruimExpression<T> = (
 /**
  *
  */
-export type CriteruimQuery<T extends Record<string, any>> = {
-  $and?: Array<CriteruimQuery<T>>;
-  $or?: Array<CriteruimQuery<T>>;
-  $nor?: Array<CriteruimQuery<T>>;
+export type CriteruimFilterQuery<T extends Record<string, any>> = {
+  $and?: Array<CriteruimFilterQuery<T>>;
+  $or?: Array<CriteruimFilterQuery<T>>;
+  $nor?: Array<CriteruimFilterQuery<T>>;
 } & {
   [K in keyof T]?: CriteruimExpression<T[K]>;
+};
+
+export type CriteruimSortQuery<T extends Record<string, any>> = {
+  [K in keyof T]?: 1 | -1
+}
+
+export type CriteruimQuery<T extends Record<string, any>> = CriteruimFilterQuery<T> & {
+  $sort?: CriteruimSortQuery<T>;
+  $skip?: number;
+  $limit?: number;
 };

@@ -1,2 +1,6 @@
 *
 !build/**
+seed.js
+seed.d.ts
+testDB.js
+testDB.d.ts

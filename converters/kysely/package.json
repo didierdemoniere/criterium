@@ -1,7 +1,13 @@
 {
   "name": "@criterium/kysely",
-  "version": "0.2.0",
-  "description": "convert criterium queries into kysely expressions",
+  "version": "0.3.0",
+  "description": "customize kysely queries using mongo-like syntax",
+  "keywords": [
+    "mongodb",
+    "mongo",
+    "kysely",
+    "postgres"
+  ],
   "main": "build/main/index.js",
   "types": "build/main/index.d.ts",
   "module": "build/module/index.js",
@@ -22,14 +28,11 @@
     "test": "tsx --test src/**/*.spec.ts",
     "test:dev": "tsx --test --watch src/**/*.spec.ts"
   },
-  "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "@criterium/core": "workspace:*"
-  },
   "devDependencies": {
     "@types/node": "^20.13.0",
+    "@types/expect": "^24.3.2",
     "@types/pg": "^8.11.6",
     "@typescript-eslint/eslint-plugin": "^7.11.0",
     "@typescript-eslint/parser": "^7.11.0",
@@ -47,5 +50,8 @@
   },
   "peerDependencies": {
     "kysely": "^0.27.3"
+  },
+  "dependencies": {
+    "@criterium/core": "workspace:*"
   }
 }

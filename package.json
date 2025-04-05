@@ -1,11 +1,11 @@
 {
   "name": "criterium",
-  "version": "0.2.0",
-  "description": "filtering query components for APIs, databases and search engines",
+  "version": "0.3.0",
+  "description": "filtering, sorting and paginate everything with mongo-like syntax",
   "scripts": {
     "build": "pnpm --stream -r run build",
     "dev": "pnpm --parallel -r run dev",
-    "test": "pnpm --stream -r --filter=!@criterium/redisearch run test",
+    "test": "pnpm --parallel -r run test",
     "test:dev": "pnpm --parallel -r run test:dev"
   },
   "author": "",

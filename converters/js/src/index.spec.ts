@@ -1,322 +1,495 @@
-import { describe, test } from 'node:test'
+import { after, before, describe, test } from 'node:test'
 import { expect } from 'expect';
-import toPredicate from './index';
+import filter from './index';
 import { QueryValidationError } from '@criterium/core';
-
-const data = {
-  name: 'John',
-  age: 30,
-  is_active: true,
-  birth_date: new Date('1990-01-01'),
-};
+import init from './testDB';
+import data from './seed'
 
 describe('operators', () => {
+  let db: Awaited<ReturnType<typeof init>>
+
+  before(async () => {
+    db = await init();
+  });
+
+  after(async () => {
+    await db.destroy();
+  });
+
   describe('empty query', () => {
     test('should match everything', async () => {
-      const test = toPredicate({});
-      if (test instanceof QueryValidationError) throw test;
-      expect(test(data)).toEqual(true);
-    });
-  });
-  describe('$eq', () => {
-    test('should support all supported types', async () => {
-      const testName = toPredicate({ name: 'John' });
-      if (testName instanceof QueryValidationError) throw testName;
-      expect(testName(data)).toEqual(true);
-
-      const testAge = toPredicate({ age: 30 });
-      if (testAge instanceof QueryValidationError) throw testAge;
-      expect(testAge(data)).toEqual(true);
-
-      const testIsActive = toPredicate({ is_active: true });
-      if (testIsActive instanceof QueryValidationError) throw testIsActive;
-      expect(testIsActive(data)).toEqual(true);
-
-      const testBirthDate = toPredicate({ birth_date: new Date('1990-01-01') });
-      if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
-      expect(testBirthDate(data)).toEqual(true);
+      const query = filter(db.getBaseQuery(), {});
+      if (query instanceof QueryValidationError) throw query;
+      const results = await db.getResults(query);
+      expect(results).toEqual(data);
     });
   });
 
-  describe('$ne', () => {
-    test('should support all supported types', async () => {
-      const testName = toPredicate({ name: { $ne: 'John' } });
-      if (testName instanceof QueryValidationError) throw testName;
-      expect(testName(data)).toEqual(false);
+  describe('$limit', () => {
+    test('no data return', async () => {
+      const query = filter(db.getBaseQuery(), { $limit: 0 });
+      if (query instanceof QueryValidationError) throw query;
+      const results = await db.getResults(query);
+      expect(results).toEqual([]);
+    });
 
-      const testAge = toPredicate({ age: { $ne: 30 } });
-      if (testAge instanceof QueryValidationError) throw testAge;
-      expect(testAge(data)).toEqual(false);
-
-      const testIsActive = toPredicate({ is_active: { $ne: true } });
-      if (testIsActive instanceof QueryValidationError) throw testIsActive;
-      expect(testIsActive(data)).toEqual(false);
-
-      const testBirthDate = toPredicate({
-        birth_date: { $ne: new Date('1990-01-01') },
-      });
-      if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
-      expect(testBirthDate(data)).toEqual(false);
+    test('partial return', async () => {
+      const query = filter(db.getBaseQuery(), { $limit: 10 });
+      if (query instanceof QueryValidationError) throw query;
+      const results = await db.getResults(query);
+      expect(results).toEqual(data.slice(0, 10));
     });
   });
 
-  describe('$gt', () => {
-    test('should support all supported types', async () => {
-      expect(toPredicate({ name: { $gt: 'John' } })).toEqual(new Error("unexpected value for operator $gt at '$.name.$gt'"));
+  describe('$skip', () => {
+    test('no data return', async () => {
+      const query = filter(db.getBaseQuery(), { $skip: data.length });
+      if (query instanceof QueryValidationError) throw query;
+      const results = await db.getResults(query);
+      expect(results).toEqual([]);
+    });
 
-      const testAge = toPredicate({ age: { $gt: 30 } });
-      if (testAge instanceof QueryValidationError) throw testAge;
-      expect(testAge(data)).toEqual(false);
-
-      expect(toPredicate({ is_active: { $gt: true } })).toEqual(new Error("unexpected value for operator $gt at '$.is_active.$gt'"));
-      const testBirthDate = toPredicate({
-        birth_date: { $gt: new Date('1990-01-01') },
-      });
-      if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
-      expect(testBirthDate(data)).toEqual(false);
+    test('partial return', async () => {
+      const query = filter(db.getBaseQuery(), { $skip: data.length - 10 });
+      if (query instanceof QueryValidationError) throw query;
+      const results = await db.getResults(query);
+      expect(results).toEqual(data.slice(data.length - 10));
     });
   });
 
-  describe('$gte', () => {
-    test('should support all supported types', async () => {
-      expect(toPredicate({ name: { $gte: 'John' } })).toEqual(new Error("unexpected value for operator $gte at '$.name.$gte'"));
-
-      const testAge = toPredicate({ age: { $gte: 30 } });
-      if (testAge instanceof QueryValidationError) throw testAge;
-      expect(testAge(data)).toEqual(true);
-
-      expect(toPredicate({ is_active: { $gte: true } })).toEqual(new Error("unexpected value for operator $gte at '$.is_active.$gte'"));
-
-      const testBirthDate = toPredicate({
-        birth_date: { $gte: new Date('1990-01-01') },
-      });
-      if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
-      expect(testBirthDate(data)).toEqual(true);
+  describe('$sort', () => {
+    test('string supported', async () => {
+      const query = filter(db.getBaseQuery(), { $sort: { name: 1 } });
+      if (query instanceof QueryValidationError) throw query;
+      const results = await db.getResults(query);
+      expect(results).toEqual(data.slice(0).sort((a, b) => a.name.localeCompare(b.name)));
     });
+
+    test('number supported', async () => {
+      const query = filter(db.getBaseQuery(), { $sort: { age: 1 } });
+      if (query instanceof QueryValidationError) throw query;
+      const results = await db.getResults(query);
+      expect(results).toEqual(data.slice(0).sort((a, b) => a.age - b.age));
+    });
+
+    test('boolean supported', async () => {
+      const query = filter(db.getBaseQuery(), { $sort: { is_active: 1 } });
+      if (query instanceof QueryValidationError) throw query;
+      const results = await db.getResults(query);
+      // check if every active user are grouped at the end
+      const firstActive = results.findIndex(u => u.is_active);
+      expect(results.slice(firstActive).every(u => u.is_active)).toEqual(true);
+    });
+
+    test('date supported', async () => {
+      const query = filter(db.getBaseQuery(), { $sort: { birth_date: 1 } });
+      if (query instanceof QueryValidationError) throw query;
+      const results = await db.getResults(query);
+      expect(results).toEqual(data.slice(0).sort((a, b) => a.birth_date.getTime() - b.birth_date.getTime()));
+    });
+
   });
 
-  describe('$lt', () => {
-    test('should support all supported types', async () => {
-      expect(toPredicate({ name: { $lt: 'John' } })).toEqual(new Error("unexpected value for operator $lt at '$.name.$lt'"));
-
-      const testAge = toPredicate({ age: { $lt: 30 } });
-      if (testAge instanceof QueryValidationError) throw testAge;
-      expect(testAge(data)).toEqual(false);
-
-      expect(toPredicate({ is_active: { $lt: true } })).toEqual(new Error("unexpected value for operator $lt at '$.is_active.$lt'"));
-
-      const testBirthDate = toPredicate({
-        birth_date: { $lt: new Date('1990-01-01') },
+  describe('filter', () => {
+    
+    describe('$eq', () => {
+      test('string supported', async () => {
+        const query = filter(db.getBaseQuery(), { name: "Alice Johnson" });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.name === "Alice Johnson"));
       });
-      if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
-      expect(testBirthDate(data)).toEqual(false);
+
+      test('number supported', async () => {
+        const query = filter(db.getBaseQuery(), { age: 25 });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.age === 25 ));
+      });
+
+      test('boolean supported', async () => {
+        const query = filter(db.getBaseQuery(), { is_active: true });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.is_active === true ));
+      });
+
+      test('date supported', async () => {
+        const query = filter(db.getBaseQuery(), { birth_date: new Date("1999-03-12") });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.birth_date.getTime() === new Date("1999-03-12").getTime() ));
+      });
     });
-  });
 
-  describe('$lte', () => {
-    test('should support all supported types', async () => {
-
-      expect(toPredicate({ name: { $lte: 'John' } })).toEqual(new Error("unexpected value for operator $lte at '$.name.$lte'"));
-
-      const testAge = toPredicate({ age: { $lte: 30 } });
-      if (testAge instanceof QueryValidationError) throw testAge;
-      expect(testAge(data)).toEqual(true);
-
-      expect(toPredicate({ is_active: { $lte: true } })).toEqual(new Error("unexpected value for operator $lte at '$.is_active.$lte'"));
-
-      const testBirthDate = toPredicate({
-        birth_date: { $lte: new Date('1990-01-01') },
+    describe('$ne', () => {
+      test('string supported', async () => {
+        const query = filter(db.getBaseQuery(), { name: { $ne: "Alice Johnson" } });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.name !== "Alice Johnson"));
       });
-      if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
-      expect(testBirthDate(data)).toEqual(true);
+
+      test('number supported', async () => {
+        const query = filter(db.getBaseQuery(), { age: { $ne: 25 }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.age !== 25 ));
+      });
+
+      test('boolean supported', async () => {
+        const query = filter(db.getBaseQuery(), { is_active: { $ne: true }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.is_active !== true ));
+      });
+
+      test('date supported', async () => {
+        const query = filter(db.getBaseQuery(), { birth_date: { $ne: new Date("1999-03-12") }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.birth_date.getTime() !== new Date("1999-03-12").getTime() ));
+      });
+
     });
-  });
 
-  describe('$in', () => {
-    test('should support all supported types', async () => {
-      const testName = toPredicate({ name: { $in: ['John'] } });
-      if (testName instanceof QueryValidationError) throw testName;
-      expect(testName(data)).toEqual(true);
-
-      const testAge = toPredicate({ age: { $in: [30] } });
-      if (testAge instanceof QueryValidationError) throw testAge;
-      expect(testAge(data)).toEqual(true);
-
-      const testIsActive = toPredicate({ is_active: { $in: [true] } });
-      if (testIsActive instanceof QueryValidationError) throw testIsActive;
-      expect(testIsActive(data)).toEqual(true);
-
-      const testBirthDate = toPredicate({
-        birth_date: { $in: [new Date('1990-01-01')] },
+    describe('$gt', () => {
+      test('string not supported', async () => {
+        //@ts-ignore
+        const query = filter(db.getBaseQuery(), { name: { $gt: "Alice Johnson" } });
+        expect(query).toEqual(new Error("unexpected value for operator $gt at '$.name.$gt'"));
       });
-      if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
-      expect(testBirthDate(data)).toEqual(true);
+
+      test('number supported', async () => {
+        const query = filter(db.getBaseQuery(), { age: { $gt: 25 }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.age > 25 ));
+      });
+
+      test('boolean not supported', async () => {
+        //@ts-ignore
+        const query = filter(db.getBaseQuery(), { is_active: { $gt: true }  });
+        expect(query).toEqual(new Error("unexpected value for operator $gt at '$.is_active.$gt'"));
+      });
+
+      test('date supported', async () => {
+        const query = filter(db.getBaseQuery(), { birth_date: { $gt: new Date("1999-03-12") }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.birth_date.getTime() > new Date("1999-03-12").getTime() ));
+      });
     });
-  });
 
-  describe('$nin', () => {
-    test('should support all supported types', async () => {
-      const testName = toPredicate({ name: { $nin: ['John'] } });
-      if (testName instanceof QueryValidationError) throw testName;
-      expect(testName(data)).toEqual(false);
-
-      const testAge = toPredicate({ age: { $nin: [30] } });
-      if (testAge instanceof QueryValidationError) throw testAge;
-      expect(testAge(data)).toEqual(false);
-
-      const testIsActive = toPredicate({ is_active: { $nin: [true] } });
-      if (testIsActive instanceof QueryValidationError) throw testIsActive;
-      expect(testIsActive(data)).toEqual(false);
-
-      const testBirthDate = toPredicate({
-        birth_date: { $nin: [new Date('1990-01-01')] },
+    describe('$gte', () => {
+      test('string not supported', async () => {
+        //@ts-ignore
+        const query = filter(db.getBaseQuery(), { name: { $gte: "Alice Johnson" } });
+        expect(query).toEqual(new Error("unexpected value for operator $gte at '$.name.$gte'"));
       });
-      if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
-      expect(testBirthDate(data)).toEqual(false);
+
+      test('number supported', async () => {
+        const query = filter(db.getBaseQuery(), { age: { $gte: 25 }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.age >= 25 ));
+      });
+
+      test('boolean not supported', async () => {
+        //@ts-ignore
+        const query = filter(db.getBaseQuery(), { is_active: { $gte: true }  });
+        expect(query).toEqual(new Error("unexpected value for operator $gte at '$.is_active.$gte'"));
+      });
+
+      test('date supported', async () => {
+        const query = filter(db.getBaseQuery(), { birth_date: { $gte: new Date("1999-03-12") }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.birth_date.getTime() >= new Date("1999-03-12").getTime() ));
+      });
     });
-  });
 
-  describe('$exists', () => {
-    test('should support all supported types', async () => {
-      const testName = toPredicate({ name: { $exists: true } });
-      if (testName instanceof QueryValidationError) throw testName;
-      expect(testName(data)).toEqual(true);
-
-      const testAge = toPredicate({ age: { $exists: false } });
-      if (testAge instanceof QueryValidationError) throw testAge;
-      expect(testAge(data)).toEqual(false);
-
-      const testIsActive = toPredicate({ is_active: { $exists: true } });
-      if (testIsActive instanceof QueryValidationError) throw testIsActive;
-      expect(testIsActive(data)).toEqual(true);
-
-      const testBirthDate = toPredicate({ birth_date: { $exists: false } });
-      if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
-      expect(testBirthDate(data)).toEqual(false);
+    describe('$lt', () => {
+      test('string not supported', async () => {
+        //@ts-ignore
+        const query = filter(db.getBaseQuery(), { name: { $lt: "Alice Johnson" } });
+        expect(query).toEqual(new Error("unexpected value for operator $lt at '$.name.$lt'"));
+      });
+    
+      test('number supported', async () => {
+        const query = filter(db.getBaseQuery(), { age: { $lt: 25 }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.age < 25 ));
+      });
+    
+      test('boolean not supported', async () => {
+        //@ts-ignore
+        const query = filter(db.getBaseQuery(), { is_active: { $lt: true }  });
+        expect(query).toEqual(new Error("unexpected value for operator $lt at '$.is_active.$lt'"));
+      });
+    
+      test('date supported', async () => {
+        const query = filter(db.getBaseQuery(), { birth_date: { $lt: new Date("1999-03-12") }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.birth_date.getTime() < new Date("1999-03-12").getTime() ));
+      });
     });
-  });
-
-  describe('$all', () => {
-    const couple = {
-      name: ['John', 'Jane'],
-      age: [30, 25],
-      is_active: [true, false],
-      birth_date: [new Date('1990-01-01'), new Date('1990-01-02')],
-    };
-
-    test('should support all supported types', async () => {
-      const testName = toPredicate({ name: { $all: ['John', 'Jane'] } });
-      if (testName instanceof QueryValidationError) throw testName;
-      expect(testName(couple)).toEqual(true);
-
-      const testAge = toPredicate({ age: { $all: [30, 25] } });
-      if (testAge instanceof QueryValidationError) throw testAge;
-      expect(testAge(couple)).toEqual(true);
-
-      const testIsActive = toPredicate({ is_active: { $all: [true, false] } });
-      if (testIsActive instanceof QueryValidationError) throw testIsActive;
-      expect(testIsActive(couple)).toEqual(true);
-
-      const testBirthDate = toPredicate({
-        birth_date: { $all: [new Date('1990-01-01'), new Date('1990-01-02')] },
+    
+    describe('$lte', () => {
+      test('string not supported', async () => {
+        //@ts-ignore
+        const query = filter(db.getBaseQuery(), { name: { $lte: "Alice Johnson" } });
+        expect(query).toEqual(new Error("unexpected value for operator $lte at '$.name.$lte'"));
       });
-      if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
-      expect(testBirthDate(couple)).toEqual(true);
+    
+      test('number supported', async () => {
+        const query = filter(db.getBaseQuery(), { age: { $lte: 25 }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.age <= 25 ));
+      });
+    
+      test('boolean not supported', async () => {
+        //@ts-ignore
+        const query = filter(db.getBaseQuery(), { is_active: { $lte: true }  });
+        expect(query).toEqual(new Error("unexpected value for operator $lte at '$.is_active.$lte'"));
+      });
+    
+      test('date supported', async () => {
+        const query = filter(db.getBaseQuery(), { birth_date: { $lte: new Date("1999-03-12") }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.birth_date.getTime() <= new Date("1999-03-12").getTime() ));
+      });
     });
-  });
 
-  describe('$like', () => {
-    test('should support all supported types', async () => {
-      const testName = toPredicate({ name: { $like: 'Jo.*' } });
-      if (testName instanceof QueryValidationError) throw testName;
-      expect(testName(data)).toEqual(true);
+    describe('$in', () => {
+      test('string supported', async () => {
+        const query = filter(db.getBaseQuery(), { name: { $in: ["Alice Johnson"] } });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.name === "Alice Johnson"));
+      });
 
-      const testName2 = toPredicate({ name: { $like: /Jo.*/i } });
-      if (testName2 instanceof QueryValidationError) throw testName2;
-      expect(testName2(data)).toEqual(true);
+      test('number supported', async () => {
+        const query = filter(db.getBaseQuery(), { age: { $in: [25] }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.age === 25 ));
+      });
 
-      expect(toPredicate({ age: { $like: 30 } })).toEqual(new Error("unexpected value for operator $like at '$.age.$like'"));
-      expect(toPredicate({ is_active: { $like: true } })).toEqual(new Error("unexpected value for operator $like at '$.is_active.$like'"));
-      expect(toPredicate({ birth_date: { $like: new Date('1990-01-01') } })).toEqual(new Error("unexpected value for operator $like at '$.birth_date.$like'"));
+      test('boolean supported', async () => {
+        const query = filter(db.getBaseQuery(), { is_active: { $in: [true] }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.is_active === true ));
+      });
+
+      test('date supported', async () => {
+        const query = filter(db.getBaseQuery(), { birth_date: { $in: [new Date("1999-03-12")] }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.birth_date.getTime() === new Date("1999-03-12").getTime() ));
+      });
     });
-  });
 
-  describe('$not', () => {
-    test('should support all supported types', async () => {
-      const testName = toPredicate({ name: { $not: { $eq: 'John' } } });
-      if (testName instanceof QueryValidationError) throw testName;
-      expect(testName(data)).toEqual(false);
-
-      const testAge = toPredicate({ age: { $not: { $eq: 30 } } });
-      if (testAge instanceof QueryValidationError) throw testAge;
-      expect(testAge(data)).toEqual(false);
-
-      const testIsActive = toPredicate({ is_active: { $not: { $eq: true } } });
-      if (testIsActive instanceof QueryValidationError) throw testIsActive;
-      expect(testIsActive(data)).toEqual(false);
-
-      const testBirthDate = toPredicate({
-        birth_date: { $not: { $eq: new Date('1990-01-01') } },
+    describe('$nin', () => {
+      test('string supported', async () => {
+        const query = filter(db.getBaseQuery(), { name: { $nin: ["Alice Johnson"] } });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.name !== "Alice Johnson"));
       });
-      if (testBirthDate instanceof QueryValidationError) throw testBirthDate;
-      expect(testBirthDate(data)).toEqual(false);
+
+      test('number supported', async () => {
+        const query = filter(db.getBaseQuery(), { age: { $nin: [25] }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.age !== 25 ));
+      });
+
+      test('boolean supported', async () => {
+        const query = filter(db.getBaseQuery(), { is_active: { $nin: [true] }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.is_active !== true ));
+      });
+
+      test('date supported', async () => {
+        const query = filter(db.getBaseQuery(), { birth_date: { $nin: [new Date("1999-03-12")] }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.birth_date.getTime() !== new Date("1999-03-12").getTime() ));
+      });
     });
-  });
 
-  describe('$and', () => {
-    test('should support all supported types', async () => {
-      const testNameAndAge = toPredicate<typeof data>({
-        $and: [{ name: { $eq: 'John' } }, { age: { $eq: 30 } }],
+    describe('$exists', () => {
+      test('string supported', async () => {
+        const query = filter(db.getBaseQuery(), { name: { $exists: true } });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data);
       });
-      if (testNameAndAge instanceof QueryValidationError) throw testNameAndAge;
-      expect(testNameAndAge(data)).toEqual(true);
 
-      const testIsActiveAndBirthDate = toPredicate<typeof data>({
-        $and: [
-          { is_active: { $eq: true } },
-          { birth_date: { $eq: new Date('1990-01-01') } },
-        ],
+      test('number supported', async () => {
+        const query = filter(db.getBaseQuery(), { age: { $exists: false }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual([]);
       });
-      if (testIsActiveAndBirthDate instanceof QueryValidationError) throw testIsActiveAndBirthDate;
-      expect(testIsActiveAndBirthDate(data)).toEqual(true);
+
+      test('boolean supported', async () => {
+        const query = filter(db.getBaseQuery(), { is_active: { $exists: true }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data);
+      });
+
+      test('date supported', async () => {
+        const query = filter(db.getBaseQuery(), { birth_date: { $exists: false }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual([]);
+      });
     });
-  });
 
-  describe('$or', () => {
-    test('should support all supported types', async () => {
-      const testNameOrAge = toPredicate<typeof data>({
-        $or: [{ name: { $eq: 'John' } }, { age: { $eq: 30 } }],
+    describe('$like', () => {
+      test('string supported', async () => {
+        const query = filter(db.getBaseQuery(), { name: { $like: 'Alice .*' } });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => /Alice .*/i.test(user.name)));
       });
-      if (testNameOrAge instanceof QueryValidationError) throw testNameOrAge;
-      expect(testNameOrAge(data)).toEqual(true);
 
-      const testIsActiveOrBirthDate = toPredicate<typeof data>({
-        $or: [
-          { is_active: { $eq: true } },
-          { birth_date: { $eq: new Date('1990-01-01') } },
-        ],
+      test('number not supported', async () => {
+        //@ts-ignore
+        const query = filter(db.getBaseQuery(), { age: { $like: 25 } });
+        expect(query).toEqual(new Error("unexpected value for operator $like at '$.age.$like'"));
       });
-      if (testIsActiveOrBirthDate instanceof QueryValidationError) throw testIsActiveOrBirthDate;
-      expect(testIsActiveOrBirthDate(data)).toEqual(true);
+
+      test('boolean not supported', async () => {
+        //@ts-ignore
+        const query = filter(db.getBaseQuery(), { is_active: { $like: true } });
+        expect(query).toEqual(new Error("unexpected value for operator $like at '$.is_active.$like'"));
+      });
+
+      test('date not supported', async () => {
+        //@ts-ignore
+        const query = filter(db.getBaseQuery(), { birth_date: { $like: new Date("1999-03-12") } });
+        expect(query).toEqual(new Error("unexpected value for operator $like at '$.birth_date.$like'"));
+      });
+
     });
-  });
 
-  describe('$nor', () => {
-    test('should support all supported types', async () => {
-      const testNameNorAge = toPredicate<typeof data>({
-        $nor: [{ name: { $eq: 'John' } }, { age: { $eq: 30 } }],
+    describe('$not', () => {
+      test('string supported', async () => {
+        const query = filter(db.getBaseQuery(), { name: { $not: { $eq: "Alice Johnson" } } });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.name !== "Alice Johnson"));
       });
-      if (testNameNorAge instanceof QueryValidationError) throw testNameNorAge;
-      expect(testNameNorAge(data)).toEqual(false);
 
-      const testIsActiveNorBirthDate = toPredicate<typeof data>({
-        $nor: [
-          { is_active: { $eq: true } },
-          { birth_date: { $eq: new Date('1990-01-01') } },
-        ],
+      test('number supported', async () => {
+        const query = filter(db.getBaseQuery(), { age: { $not: { $eq: 25 } } });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.age !== 25 ));
       });
-      if (testIsActiveNorBirthDate instanceof QueryValidationError) throw testIsActiveNorBirthDate;
-      expect(testIsActiveNorBirthDate(data)).toEqual(false);
+
+      test('boolean supported', async () => {
+        const query = filter(db.getBaseQuery(), { is_active: { $not: { $eq: true } }  });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.is_active !== true ));
+      });
+
+      test('date supported', async () => {
+        const query = filter(db.getBaseQuery(), { birth_date: { $not: { $eq: new Date("1999-03-12") } } });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.birth_date.getTime() !== new Date("1999-03-12").getTime() ));
+      });
     });
+
+    describe('$all', () => {
+      test('string supported', async () => {
+        const query = filter(db.getBaseQuery(), { interests: { $all: [ "cooking", "gaming"] } });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => user.interests.indexOf("cooking") !== -1 && user.interests.indexOf("gaming") !== -1));
+      });
+    });
+
+    describe('$and', () => {
+      test('should support all supported types', async () => {
+        const query = filter(db.getBaseQuery(), {
+          $and: [
+            { name: { $like: 'Alice.*' } },
+            { age: { $lte: 40 } },
+            { is_active: { $eq: true } },
+            { birth_date: { $gt: new Date("1990-01-01") } },
+            { interests: { $all: ["reading", "traveling"] } },
+          ]
+        });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => {
+          return /Alice.*/.test(user.name)
+          && user.age <= 40
+          && user.is_active === true
+          && user.birth_date.getTime() > new Date("1990-01-01").getTime()
+          && user.interests.indexOf("reading") !== -1 && user.interests.indexOf("traveling") !== -1
+        }));
+      });
+    });
+
+    describe('$or', () => {
+      test('should support all supported types', async () => {
+        const query = filter(db.getBaseQuery(), {
+          $or: [
+            { name: { $like: 'Alice.*' } },
+            { age: { $lte: 40 } },
+            { is_active: { $eq: true } },
+            { birth_date: { $gt: new Date("1990-01-01") } },
+            { interests: { $all: ["reading", "traveling"] } },
+          ]
+        });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => {
+          return /Alice.*/.test(user.name)
+          || user.age <= 40
+          || user.is_active === true
+          || user.birth_date.getTime() > new Date("1990-01-01").getTime()
+          || user.interests.indexOf("reading") !== -1 && user.interests.indexOf("traveling") !== -1
+        }));
+      });
+    });
+
+    describe('$nor', () => {
+      test('should support all supported types', async () => {
+        const query = filter(db.getBaseQuery(), {
+          $nor: [
+            { name: { $like: 'Alice.*' } },
+            { age: { $lte: 40 } },
+            { is_active: { $eq: true } },
+            { birth_date: { $gt: new Date("1990-01-01") } },
+            { interests: { $all: ["reading", "traveling"] } },
+          ]
+        });
+        if (query instanceof QueryValidationError) throw query;
+        const results = await db.getResults(query);
+        expect(results).toEqual(data.filter(user => {
+          return !/Alice.*/.test(user.name)
+          && !(user.age <= 40)
+          && !(user.is_active === true)
+          && !(user.birth_date.getTime() > new Date("1990-01-01").getTime())
+          && !(user.interests.indexOf("reading") !== -1 && user.interests.indexOf("traveling") !== -1)
+        }));
+      });
+    });
+    
   });
 });

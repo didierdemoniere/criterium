@@ -3,7 +3,7 @@ import {
   QueryValidationError,
   ConfigurationError,
 } from './errors';
-import { CriteriumDialect, CriteruimQuery } from './types';
+import { CriteriumDialect, CriteruimFilterQuery } from './types';
 import * as validation from './validation';
 
 export function converter<T>(dialect: CriteriumDialect<T>) {
@@ -11,7 +11,7 @@ export function converter<T>(dialect: CriteriumDialect<T>) {
     return new ConfigurationError('operators "$eq" and "$and" are mandatory');
   }
 
-  return <Data extends Record<string, any>>(query: CriteruimQuery<Data>): 
+  return <Data extends Record<string, any>>(query: CriteruimFilterQuery<Data>): 
   T | QueryValidationError => {
     const operators = dialect.operators;
     const validations = validation.operators;
