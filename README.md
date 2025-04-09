@@ -38,6 +38,7 @@ return query.execute();
 
 ### Validators
 ✅ zod 
+✅ typebox 
 
 ## Roadmap
 
@@ -45,4 +46,4 @@ return query.execute();
 🔲 drizzle
 
 ### Validators
-🔲 typebox
+🤷 please suggest
