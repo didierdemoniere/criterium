@@ -4,6 +4,7 @@ import { sort } from './sort'
 import { offset } from './offset'
 import { limit } from './limit'
 
+export { converterOptions } from './options';
 export { type CriteruimQuery, QueryValidationError };
 
 export default <Data extends Record<string, any>>(arr: Array<Data>, query: CriteruimQuery<Data>) => {
@@ -31,12 +32,4 @@ export default <Data extends Record<string, any>>(arr: Array<Data>, query: Crite
   }
 
   return jsQuery;
-};
-
-export const converterOptions = {
-  predicate: {
-    get: (obj: any, path: Array<string | number>) => {
-      return path.reduce((current, key) => current && current[key], obj);
-    },
-  },
 };
