@@ -1,22 +1,24 @@
-import { TObject, type Static, Type as t, TUnsafe, TSchema } from '@sinclair/typebox';
+import { type TObject, type Static, type JavaScriptTypeBuilder, type TUnsafe, type TSchema } from '@sinclair/typebox';
 import type { CriteruimQuery } from '@criterium/core';
 export type { CriteruimQuery };
 
-export function queryOf<S extends TObject<any>>(
+export function queryOf<S extends TObject>(
+  t: JavaScriptTypeBuilder,
   schema: S,
 ): TUnsafe<CriteruimQuery<Static<S>>> {
   
   return t.Intersect([
-    filterOf(schema),
+    filterOf(t, schema),
     t.Object({
-      $sort: t.Optional(sorterOf(schema)),
+      $sort: t.Optional(sorterOf(t, schema)),
       $skip: t.Optional(t.Number()),
       $limit: t.Optional(t.Number())
     })
   ], { unevaluatedProperties: false }) as any;
 }
 
-function filterOf<S extends TObject<any>>(
+function filterOf<S extends TObject>(
+  t: JavaScriptTypeBuilder,
   schema: S,
 ) {
   return t.Intersect([
@@ -27,11 +29,12 @@ function filterOf<S extends TObject<any>>(
         $nor: t.Optional(t.Array(thisType)),
       })
     }),
-    expressionOf(schema)
+    expressionOf(t, schema)
   ])
 }
 
-function sorterOf<S extends TObject<any>>(
+function sorterOf<S extends TObject>(
+  t: JavaScriptTypeBuilder,
   schema: S,
 ) {
   return t.Object({
@@ -44,6 +47,7 @@ function sorterOf<S extends TObject<any>>(
 
 
 function expressionOf<S extends TSchema>(
+  t: JavaScriptTypeBuilder,
   schema: S,
 ): TSchema {
   return t.Recursive(thisType => {
@@ -59,7 +63,7 @@ function expressionOf<S extends TSchema>(
         t.Object({
           ...commonProps,
           ...Object.keys(schema.properties).reduce((obj, key) => {
-            obj[key] = t.Optional(expressionOf(schema.properties[key]));
+            obj[key] = t.Optional(expressionOf(t, schema.properties[key]));
             return obj;
           }, {} as any),
         }, { additionalProperties: false })

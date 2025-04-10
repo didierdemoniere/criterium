@@ -1,6 +1,6 @@
 {
   "name": "@criterium/typebox",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "create the typebox query schema for a given typebox entity schema",
   "keywords": [
     "mongodb",
@@ -46,5 +46,8 @@
     "rimraf": "^5.0.7",
     "run-script-os": "^1.1.6",
     "typescript": "^5.4.5"
+  },
+  "peerDependencies": {
+    "@sinclair/typebox": "^0.34.33"
   }
 }

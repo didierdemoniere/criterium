@@ -22,7 +22,7 @@ const User = t.Object({
   }),
 });
 
-const UserQuery = queryOf(User);
+const UserQuery = queryOf(t, User);
 
 Value.Check(UserQuery, {
   address: {

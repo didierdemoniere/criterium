@@ -8,14 +8,12 @@ import { queryOf } from './index';
 
 describe('queryOf', () => {
   test('works', () => {
-    const schema = queryOf(
-      t.Object({
-        name: t.String(),
-        addresse: t.Object({
-          street: t.String(),
-        }),
+    const schema = queryOf(t, t.Object({
+      name: t.String(),
+      addresse: t.Object({
+        street: t.String(),
       }),
-    );
+    }));
 
     expect(Value.Errors(schema, {
       addresse: { street: { $in: ['SF', 'NY'] } },
