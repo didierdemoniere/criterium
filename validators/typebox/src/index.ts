@@ -21,16 +21,16 @@ function filterOf<S extends TObject>(
   t: JavaScriptTypeBuilder,
   schema: S,
 ) {
-  return t.Intersect([
-    t.Recursive((thisType) => {
-      return t.Object({
+  return t.Recursive((thisType) => {
+    return t.Intersect([
+      t.Object({
         $and: t.Optional(t.Array(thisType)),
         $or: t.Optional(t.Array(thisType)),
         $nor: t.Optional(t.Array(thisType)),
-      })
-    }),
-    expressionOf(t, schema)
-  ])
+      }),
+      expressionOf(t, schema)
+    ])
+  })
 }
 
 function sorterOf<S extends TObject>(

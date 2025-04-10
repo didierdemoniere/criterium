@@ -1,6 +1,6 @@
 {
   "name": "@criterium/typebox",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "create the typebox query schema for a given typebox entity schema",
   "keywords": [
     "mongodb",
