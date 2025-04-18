@@ -23,12 +23,12 @@ function filterOf<S extends TObject>(
 ) {
   return t.Recursive((thisType) => {
     return t.Intersect([
+      expressionOf(t, schema, true),
       t.Object({
         $and: t.Optional(t.Array(thisType)),
         $or: t.Optional(t.Array(thisType)),
         $nor: t.Optional(t.Array(thisType)),
       }),
-      expressionOf(t, schema)
     ])
   })
 }
@@ -49,66 +49,68 @@ function sorterOf<S extends TObject>(
 function expressionOf<S extends TSchema>(
   t: JavaScriptTypeBuilder,
   schema: S,
+  additionalProperties = false
 ): TSchema {
   return t.Recursive(thisType => {
-    const alternatives: TSchema[] = [];
-    
-    const commonProps = {
-      $not: t.Optional(thisType),
-      $exists: t.Optional(t.Boolean()),
-    }
-
     if (schema.type === 'object') {
-      alternatives.push(
-        t.Object({
-          ...commonProps,
+        return t.Object({
           ...Object.keys(schema.properties).reduce((obj, key) => {
             obj[key] = t.Optional(expressionOf(t, schema.properties[key]));
             return obj;
           }, {} as any),
-        }, { additionalProperties: false })
-      );
-    } else if (schema.type === 'array') {
-      alternatives.push(
+          $not: t.Optional(thisType),
+          $exists: t.Optional(t.Boolean()),
+        }, { additionalProperties })
+    } 
+    else if (schema.type === 'array') {
+        return t.Object({
+          $not: t.Optional(thisType),
+          $exists: t.Optional(t.Boolean()),
+          $all: t.Optional(schema),
+        }, { additionalProperties })
+    } 
+    else if (schema.type === 'string') {
+      return t.Union([
+        schema,
         t.Object({
-        ...commonProps,
-        $all: t.Optional(schema),
-        }, { additionalProperties: false })
-      );
-    } else if (schema.type === 'number') {
-      alternatives.push(schema);
-  
-      alternatives.push(
-          t.Object({
-            ...commonProps,
-            $gt: t.Optional(t.Number()),
-            $gte: t.Optional(t.Number()),
-            $lt: t.Optional(t.Number()),
-            $lte: t.Optional(t.Number()),
-            $in: t.Optional(t.Array(t.Number())),
-            $nin: t.Optional(t.Array(t.Number())),
-            $eq: t.Optional(t.Number()),
-            $ne: t.Optional(t.Number()),
-          }, { additionalProperties: false })
-      );
-    } else if (schema.type === 'string') {
-      alternatives.push(schema);
-  
-      alternatives.push(
+          $not: t.Optional(thisType),
+          $exists: t.Optional(t.Boolean()),
+          $in: t.Optional(t.Array(schema)),
+          $nin: t.Optional(t.Array(schema)),
+          $eq: t.Optional(schema),
+          $ne: t.Optional(schema),
+          $like: t.Optional(schema),
+        }, { additionalProperties })
+      ])
+    } 
+    else if (schema.type === 'number' || schema.type === 'integer' || schema.type === 'Date' || schema.type === 'bigint') {
+      return t.Union([
+        schema,
         t.Object({
-          ...commonProps,
-          $in: t.Optional(t.Array(t.String())),
-          $nin: t.Optional(t.Array(t.String())),
-          $eq: t.Optional(t.String()),
-          $ne: t.Optional(t.String()),
-          $like: t.Optional(t.String()),
-        }, { additionalProperties: false })
-      );
+          $not: t.Optional(thisType),
+          $exists: t.Optional(t.Boolean()),
+          $gt: t.Optional(schema),
+          $gte: t.Optional(schema),
+          $lt: t.Optional(schema),
+          $lte: t.Optional(schema),
+          $in: t.Optional(t.Array(schema)),
+          $nin: t.Optional(t.Array(schema)),
+          $eq: t.Optional(schema),
+          $ne: t.Optional(schema),
+        }, { additionalProperties })
+      ])
+    }  else  {
+      return t.Union([
+        schema,
+        t.Object({
+          $not: t.Optional(thisType),
+          $exists: t.Optional(t.Boolean()),
+          $eq: t.Optional(schema),
+          $ne: t.Optional(schema),
+          $in: t.Optional(t.Array(schema)),
+          $nin: t.Optional(t.Array(schema))
+        }, { additionalProperties })
+      ])
     }
-
-    return alternatives.length == 1
-      ? alternatives[0]
-      : t.Union(alternatives);
   })
-
 }
